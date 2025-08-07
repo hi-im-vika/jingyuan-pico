@@ -158,11 +158,11 @@ void loop() {
                     for (int i = 0; i < chase_cnt; i++) {
                         int offset = 32;
                         float scale = (255 - offset) / 255.0;
-                        chase_array[i] = scale * strip.sine8((5 * i) + chase_offset) + offset;
+                        chase_array[i] = scale * Adafruit_NeoPixel::sine8((5 * i) + chase_offset) + offset;
                     }
                     chase_offset--;
                     for (int i = 0; i < chase_cnt; i++) {
-                        strip.setPixelColor(i, strip.ColorHSV(5461, 255, chase_array[i]));
+                        strip.setPixelColor(i, Adafruit_NeoPixel::ColorHSV(5461, 255, chase_array[i]));
                     }
                     break;
                 case SOLID:
@@ -171,7 +171,7 @@ void loop() {
                     }
                     memset(chase_array, 255, LED_COUNT * sizeof(chase_array[0]));
                     for (int i = 0; i < chase_cnt; i++) {
-                        strip.setPixelColor(i, strip.ColorHSV(5461, 255, chase_array[i]));
+                        strip.setPixelColor(i, Adafruit_NeoPixel::ColorHSV(5461, 255, chase_array[i]));
                     }
                     break;
                 default:
