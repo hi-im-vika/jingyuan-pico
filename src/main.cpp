@@ -169,9 +169,9 @@ void loop() {
                     if (chase_cnt < LED_COUNT && !(millis() % transition_time(LED_COUNT, 0.25f))) {
                         chase_cnt++;
                     }
-                    memset(chase_array, 255, LED_COUNT * sizeof(chase_array[0]));
-                    for (int i = 0; i < chase_cnt; i++) {
-                        strip.setPixelColor(i, Adafruit_NeoPixel::ColorHSV(5461, 255, chase_array[i]));
+                    // only fill LEDs when chase_cnt > 0, since 0 fills all LEDs
+                    if (chase_cnt) {
+                        strip.fill(Adafruit_NeoPixel::ColorHSV(5461, 255, 255),0,chase_cnt);
                     }
                     break;
                 default:
