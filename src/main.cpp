@@ -7,6 +7,9 @@
 #define PATT_PIN 8
 #define DEBOUNCE_DELAY 10
 #define CHASE_Y_OFFSET 32
+#define RAINBOW_FADE_FRAME_DELAY 1
+#define ANIM_RAINBOW_FRAME_TIME 10
+#define ANIM_CHASE_FRAME_TIME 10
 
 enum anim_state {
     DISCONNECTED,
@@ -45,6 +48,8 @@ bool pressed = false;
 bool acted = false;
 
 uint16_t frame_delay = 10.0f;
+uint16_t frame_delay_rt = 10.0f;
+uint16_t frame_delay_2 = 10.0f;
 byte startup_brightness = 0;
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
@@ -60,6 +65,8 @@ void setup() {
     strip.begin();  // INITIALIZE NeoPixel strip object (REQUIRED)
     strip.show();   // Turn OFF all pixels ASAP
     frame_delay = transition_time(LED_COUNT, 0.5f);
+    frame_delay_rt = transition_time(LED_COUNT * 2, 0.5f);
+    frame_delay_2 = transition_time(LED_COUNT, 0.25f);
 }
 
 void loop() {
@@ -100,7 +107,9 @@ void loop() {
 
         // if strip was disconnected
         if (do_startup) {
-            if (!(millis() % frame_delay) || startup == RAINBOW_IN || startup == RAINBOW_OUT) {
+            if (millis() - frame_millis > frame_delay_rt ||
+            startup == RAINBOW_IN && millis() - frame_millis > RAINBOW_FADE_FRAME_DELAY ||
+            startup == RAINBOW_OUT && millis() - frame_millis > RAINBOW_FADE_FRAME_DELAY) {
                 strip.clear();
                 switch (startup) {
                     case UP:
@@ -109,6 +118,7 @@ void loop() {
                             startup = DOWN;
                         } else {
                             strip.setPixelColor(startup_next_led++, 0xFFFFFF);
+                            frame_millis = millis();
                             strip.show();
                         }
                         break;
@@ -127,12 +137,14 @@ void loop() {
                             }
                         } else {
                             strip.setPixelColor(--startup_next_led, 0xFFFFFF);
+                            frame_millis = millis();
                             strip.show();
                         }
                         break;
                     case RAINBOW_IN:
                         if (startup_brightness < 255) {
                             strip.rainbow(rainbow_fpx_hue, 1, 255, ++startup_brightness);
+                            frame_millis = millis();
                             strip.show();
                         } else {
                             do_startup = false;
@@ -142,6 +154,7 @@ void loop() {
                     case RAINBOW_OUT:
                         if (startup_brightness > 0) {
                             strip.rainbow(rainbow_fpx_hue, 1, 255, --startup_brightness);
+                            frame_millis = millis();
                             strip.show();
                         } else {
                             do_startup = false;
@@ -157,12 +170,20 @@ void loop() {
             switch (patt) {
                 case RAINBOW:
                     strip.rainbow(rainbow_fpx_hue);
-                    rainbow_fpx_hue = rainbow_fpx_hue - 64 > 65535 ? 65535 : rainbow_fpx_hue - 64;
+                    // update animation position
+                    if (millis() - frame_millis > ANIM_RAINBOW_FRAME_TIME) {
+                        frame_millis = millis();
+                        // scale rainbow anim cycle to 255 steps, meaning to go around
+                        // the entire hue circle in 255 steps, each step is 257 wide
+                        // whole animation will take 255 * ANIM_RAINBOW_FRAME_TIME ms
+                        rainbow_fpx_hue = rainbow_fpx_hue - 257 > 65535 ? 65535 : rainbow_fpx_hue - 257;
+                    }
                     break;
                 case CHASE:
                     // chase pattern startup anim
-                    // add one more LED to anim every time update runs
-                    if (chase_next_led < LED_COUNT && !(millis() % transition_time(LED_COUNT, 0.25f))) {
+                    // update startup animation LED count
+                    if (chase_next_led < LED_COUNT && (millis() - chase_millis > frame_delay_2)) {
+                        chase_millis = millis();
                         chase_next_led++;
                     }
                     // draw output of sine8() between 0 and LED_COUNT, change offset for next draw
@@ -173,15 +194,23 @@ void loop() {
                         // queue changes to lighting
                         strip.setPixelColor(i, Adafruit_NeoPixel::ColorHSV(5461, 255, chase_array[i]));
                     }
-                    chase_x_offset--;
+                    // update animation position
+                    if (millis() - frame_millis > ANIM_CHASE_FRAME_TIME) {
+                        frame_millis = millis();
+                        // chase anim has 255 steps, sine8() between 32 and 255 is spread across
+                        // 255 steps, whole animation will take 255 * ANIM_CHASE_FRAME_TIME ms
+                        chase_x_offset--;
+                    }
                     break;
                 case SOLID:
                     // solid pattern startup anim
-                    // add one more LED to anim every time update runs
-                    if (chase_next_led < LED_COUNT && !(millis() % transition_time(LED_COUNT, 0.25f))) {
+                    // update startup animation LED count
+                    if (chase_next_led < LED_COUNT && (millis() - chase_millis > frame_delay_2)) {
+                        chase_millis = millis();
                         chase_next_led++;
                     }
                     // only fill LEDs when chase_next_led > 0, since 0 fills all LEDs
+
                     if (chase_next_led) {
                         strip.fill(Adafruit_NeoPixel::ColorHSV(5461, 255, 255), 0, chase_next_led);
                     }
