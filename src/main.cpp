@@ -111,9 +111,7 @@ void loop() {
                                 case SOLID:
                                     do_startup = false;
                                     chase_cnt = 0;
-                                    for (int i = 0; i < LED_COUNT; i++) {
-                                        chase_array[i] = 0;
-                                    }
+                                    memset(chase_array, 0, LED_COUNT * sizeof(chase_array[0]));
                                     break;
                                 default:
                                     startup = RAINBOW_IN;
