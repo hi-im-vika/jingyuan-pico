@@ -153,9 +153,12 @@ void loop() {
                     rainbow_fpx_hue = rainbow_fpx_hue - 64 > 65535 ? 65535 : rainbow_fpx_hue - 64;
                     break;
                 case CHASE:
+                    // chase pattern startup anim
+                    // add one more LED to anim every time update runs
                     if (chase_cnt < LED_COUNT && !(millis() % transition_time(LED_COUNT, 0.25f))) {
                         chase_cnt++;
                     }
+                    // draw output of sine8() between 0 and LED_COUNT, change offset for next draw
                     for (int i = 0; i < chase_cnt; i++) {
                         // restrict brightness range between 32 and 255
                         float scale = (255 - CHASE_Y_OFFSET) / 255.0;
@@ -166,6 +169,8 @@ void loop() {
                     chase_x_offset--;
                     break;
                 case SOLID:
+                    // solid pattern startup anim
+                    // add one more LED to anim every time update runs
                     if (chase_cnt < LED_COUNT && !(millis() % transition_time(LED_COUNT, 0.25f))) {
                         chase_cnt++;
                     }
