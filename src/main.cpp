@@ -6,6 +6,7 @@
 #define SENSE_PIN 9
 #define PATT_PIN 8
 #define DEBOUNCE_DELAY 10
+#define CHASE_Y_OFFSET 32
 
 enum anim_state {
     DISCONNECTED,
@@ -30,7 +31,7 @@ long pressed_millis = 0;
 int16_t rainbow_fpx_hue = 65535;
 uint8_t chase_sine_pos = 255;
 uint8_t chase_array[LED_COUNT] = { 0 };
-uint8_t chase_offset = 255;
+uint8_t chase_x_offset = 255;
 uint8_t chase_cnt = 0;
 int next_led = 0;
 bool do_startup = true;
@@ -156,14 +157,13 @@ void loop() {
                         chase_cnt++;
                     }
                     for (int i = 0; i < chase_cnt; i++) {
-                        int offset = 32;
-                        float scale = (255 - offset) / 255.0;
-                        chase_array[i] = scale * Adafruit_NeoPixel::sine8((5 * i) + chase_offset) + offset;
-                    }
-                    chase_offset--;
-                    for (int i = 0; i < chase_cnt; i++) {
+                        // restrict brightness range between 32 and 255
+                        float scale = (255 - CHASE_Y_OFFSET) / 255.0;
+                        chase_array[i] = scale * Adafruit_NeoPixel::sine8((5 * i) + chase_x_offset) + CHASE_Y_OFFSET;
+                        // queue changes to lighting
                         strip.setPixelColor(i, Adafruit_NeoPixel::ColorHSV(5461, 255, chase_array[i]));
                     }
+                    chase_x_offset--;
                     break;
                 case SOLID:
                     if (chase_cnt < LED_COUNT && !(millis() % transition_time(LED_COUNT, 0.25f))) {
