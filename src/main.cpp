@@ -169,9 +169,7 @@ void loop() {
                     if (chase_cnt < LED_COUNT && !(millis() % transition_time(LED_COUNT, 0.25f))) {
                         chase_cnt++;
                     }
-                    for (int i = 0; i < chase_cnt; i++) {
-                        chase_array[i] = 255;
-                    }
+                    memset(chase_array, 255, LED_COUNT * sizeof(chase_array[0]));
                     for (int i = 0; i < chase_cnt; i++) {
                         strip.setPixelColor(i, strip.ColorHSV(5461, 255, chase_array[i]));
                     }
