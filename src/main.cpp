@@ -28,7 +28,9 @@ enum anim_pattern {
 anim_state state = DISCONNECTED;
 anim_state startup = UP;
 anim_pattern patt = SOLID;
-long pressed_millis = 0;
+ulong pressed_millis = 0;
+ulong frame_millis = 0;
+ulong chase_millis = 0;
 
 // anims
 int16_t rainbow_fpx_hue = 65535;
