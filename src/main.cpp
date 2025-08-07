@@ -24,20 +24,25 @@ enum anim_pattern {
 };
 
 // globals
+// state machine
 anim_state state = DISCONNECTED;
 anim_state startup = UP;
-volatile anim_pattern patt = SOLID;
+anim_pattern patt = SOLID;
 long pressed_millis = 0;
+
+// anims
 int16_t rainbow_fpx_hue = 65535;
-uint8_t chase_sine_pos = 255;
 uint8_t chase_array[LED_COUNT] = { 0 };
 uint8_t chase_x_offset = 255;
-uint8_t chase_cnt = 0;
-int next_led = 0;
+uint8_t chase_next_led = 0;
+int startup_next_led = 0;
 bool do_startup = true;
+
+// debounce
 bool pressed = false;
 bool acted = false;
-int next_delay = 10.0f;
+
+uint16_t frame_delay = 10.0f;
 byte startup_brightness = 0;
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
@@ -52,7 +57,7 @@ void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
     strip.begin();  // INITIALIZE NeoPixel strip object (REQUIRED)
     strip.show();   // Turn OFF all pixels ASAP
-    next_delay = transition_time(LED_COUNT, 0.5f);
+    frame_delay = transition_time(LED_COUNT, 0.5f);
 }
 
 void loop() {
@@ -93,25 +98,25 @@ void loop() {
 
         // if strip was disconnected
         if (do_startup) {
-            if (!(millis() % next_delay) || startup == RAINBOW_IN || startup == RAINBOW_OUT) {
+            if (!(millis() % frame_delay) || startup == RAINBOW_IN || startup == RAINBOW_OUT) {
                 strip.clear();
                 switch (startup) {
                     case UP:
-                        if (next_led > (LED_COUNT - 1)) {
-                            next_led--;
+                        if (startup_next_led > (LED_COUNT - 1)) {
+                            startup_next_led--;
                             startup = DOWN;
                         } else {
-                            strip.setPixelColor(next_led++, 0xFFFFFF);
+                            strip.setPixelColor(startup_next_led++, 0xFFFFFF);
                             strip.show();
                         }
                         break;
                     case DOWN:
-                        if (next_led < 0) {
+                        if (startup_next_led < 0) {
                             switch (patt) {
                                 case CHASE:
                                 case SOLID:
                                     do_startup = false;
-                                    chase_cnt = 0;
+                                    chase_next_led = 0;
                                     memset(chase_array, 0, LED_COUNT * sizeof(chase_array[0]));
                                     break;
                                 default:
@@ -119,7 +124,7 @@ void loop() {
                                     break;
                             }
                         } else {
-                            strip.setPixelColor(--next_led, 0xFFFFFF);
+                            strip.setPixelColor(--startup_next_led, 0xFFFFFF);
                             strip.show();
                         }
                         break;
@@ -155,11 +160,11 @@ void loop() {
                 case CHASE:
                     // chase pattern startup anim
                     // add one more LED to anim every time update runs
-                    if (chase_cnt < LED_COUNT && !(millis() % transition_time(LED_COUNT, 0.25f))) {
-                        chase_cnt++;
+                    if (chase_next_led < LED_COUNT && !(millis() % transition_time(LED_COUNT, 0.25f))) {
+                        chase_next_led++;
                     }
                     // draw output of sine8() between 0 and LED_COUNT, change offset for next draw
-                    for (int i = 0; i < chase_cnt; i++) {
+                    for (int i = 0; i < chase_next_led; i++) {
                         // restrict brightness range between 32 and 255
                         float scale = (255 - CHASE_Y_OFFSET) / 255.0;
                         chase_array[i] = scale * Adafruit_NeoPixel::sine8((5 * i) + chase_x_offset) + CHASE_Y_OFFSET;
@@ -171,12 +176,12 @@ void loop() {
                 case SOLID:
                     // solid pattern startup anim
                     // add one more LED to anim every time update runs
-                    if (chase_cnt < LED_COUNT && !(millis() % transition_time(LED_COUNT, 0.25f))) {
-                        chase_cnt++;
+                    if (chase_next_led < LED_COUNT && !(millis() % transition_time(LED_COUNT, 0.25f))) {
+                        chase_next_led++;
                     }
-                    // only fill LEDs when chase_cnt > 0, since 0 fills all LEDs
-                    if (chase_cnt) {
-                        strip.fill(Adafruit_NeoPixel::ColorHSV(5461, 255, 255),0,chase_cnt);
+                    // only fill LEDs when chase_next_led > 0, since 0 fills all LEDs
+                    if (chase_next_led) {
+                        strip.fill(Adafruit_NeoPixel::ColorHSV(5461, 255, 255), 0, chase_next_led);
                     }
                     break;
                 default:
@@ -190,7 +195,7 @@ void loop() {
     // as soon as strip disconnects
     digitalWrite(LED_BUILTIN, LOW);
     startup_brightness = 0;
-    next_led = 0;
+    startup_next_led = 0;
     do_startup = true;
     startup = UP;
     yield();
