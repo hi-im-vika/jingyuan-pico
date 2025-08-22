@@ -108,7 +108,7 @@ void setup() {
 }
 
 void loop() {
-    strip[0] = CRGB::Red;
+    fl::fill_rainbow_circular(strip,LED_COUNT,0);
     FastLED.show();
     yield();
 }
