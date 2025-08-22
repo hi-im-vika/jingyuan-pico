@@ -232,27 +232,27 @@ void loop() {
                         rainbow_fpx_hue = rainbow_fpx_hue - 257 > 65535 ? 65535 : rainbow_fpx_hue - 257;
                     }
                     break;
-                case CHASE:
+                case PULSE:
                     // chase pattern startup anim
                     // update startup animation LED count
-                    if (chase_next_led < LED_COUNT && (millis() - chase_millis > frame_delay_2)) {
-                        chase_millis = millis();
-                        chase_next_led++;
+                    if (pulse_next_led < LED_COUNT && (millis() - pulse_millis > frame_delay_2)) {
+                        pulse_millis = millis();
+                        pulse_next_led++;
                     }
                     // draw output of sine8() between 0 and LED_COUNT, change offset for next draw
-                    for (int i = 0; i < chase_next_led; i++) {
+                    for (int i = 0; i < pulse_next_led; i++) {
                         // restrict brightness range between 32 and 255
-                        float scale = (255 - CHASE_Y_OFFSET) / 255.0;
-                        chase_array[i] = scale * Adafruit_NeoPixel::sine8((5 * i) + chase_x_offset) + CHASE_Y_OFFSET;
+                        float scale = (255 - PULSE_Y_OFFSET) / 255.0;
+                        led_buffer[i] = scale * Adafruit_NeoPixel::sine8((5 * i) + pulse_x_offset) + PULSE_Y_OFFSET;
                         // queue changes to lighting
-                        strip.setPixelColor(i, Adafruit_NeoPixel::ColorHSV(5461, 255, chase_array[i]));
+                        strip.setPixelColor(i, Adafruit_NeoPixel::ColorHSV(5461, 255, led_buffer[i]));
                     }
                     // update animation position
-                    if (millis() - frame_millis > ANIM_CHASE_FRAME_TIME) {
+                    if (millis() - frame_millis > ANIM_PULSE_FRAME_TIME) {
                         frame_millis = millis();
                         // chase anim has 255 steps, sine8() between 32 and 255 is spread across
-                        // 255 steps, whole animation will take 255 * ANIM_CHASE_FRAME_TIME ms
-                        chase_x_offset--;
+                        // 255 steps, whole animation will take 255 * ANIM_PULSE_FRAME_TIME ms
+                        pulse_x_offset--;
                     }
                     break;
                 case SOLID:
