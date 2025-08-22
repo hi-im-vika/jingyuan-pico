@@ -78,6 +78,7 @@ uint16_t frame_delay_rt = 10.0f;
 uint16_t frame_delay_2 = 10.0f;
 byte startup_brightness = 0;
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel onboard(1, 16, NEO_GRB + NEO_KHZ800);
 ADCInput adc(A0);
 
 void update_anim_chase();
