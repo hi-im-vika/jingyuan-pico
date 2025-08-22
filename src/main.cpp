@@ -161,9 +161,9 @@ void loop() {
 
         // if strip was disconnected
         if (do_startup) {
-            if (millis() - frame_millis > frame_delay_rt ||
-            startup == RAINBOW_IN && millis() - frame_millis > RAINBOW_FADE_FRAME_DELAY ||
-            startup == RAINBOW_OUT && millis() - frame_millis > RAINBOW_FADE_FRAME_DELAY) {
+            if (millis() - frame_millis > frame_delay ||
+                    (startup == RAINBOW_IN && millis() - frame_millis > RAINBOW_FADE_FRAME_DELAY) ||
+                    (startup == RAINBOW_OUT && millis() - frame_millis > RAINBOW_FADE_FRAME_DELAY)) {
                 strip.clear();
                 switch (startup) {
                     case UP:
