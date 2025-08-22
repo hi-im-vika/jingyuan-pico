@@ -123,14 +123,24 @@ void loop() {
             pressed_millis = millis();
         }
 
+        // switch anim
         if (pressed) {
             if (millis() - pressed_millis > DEBOUNCE_DELAY) {
                 if (digitalRead(PATT_PIN) == LOW && acted == false) {
                     switch (patt) {
                         case SOLID:
+                            patt = PULSE;
+                            break;
+                        case PULSE:
                             patt = CHASE;
                             break;
                         case CHASE:
+                            patt = BREATHING;
+                            break;
+                        case BREATHING:
+                            patt = SOUND;
+                            break;
+                        case SOUND:
                             patt = RAINBOW;
                             break;
                         case RAINBOW:
