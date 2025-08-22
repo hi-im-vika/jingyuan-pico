@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <ADCInput.h>
 #include <Adafruit_NeoPixel.h>
 
 #define LED_PIN 10
