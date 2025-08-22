@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <ADCInput.h>
-#include <Adafruit_NeoPixel.h>
+#include <FastLED.h>
 #include <EEPROM.h>
 
 #define LED_PIN 5
@@ -77,8 +77,8 @@ uint16_t frame_delay = 10.0f;
 uint16_t frame_delay_rt = 10.0f;
 uint16_t frame_delay_2 = 10.0f;
 byte startup_brightness = 0;
-Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel onboard(1, 16, NEO_GRB + NEO_KHZ800);
+CRGB strip[LED_COUNT];
+//CRGB onboard[1];
 ADCInput adc(A0);
 
 void update_anim_chase();
@@ -96,11 +96,7 @@ void setup() {
     pinMode(SENSE_PIN, INPUT_PULLUP);
     pinMode(PATT_PIN, INPUT_PULLUP);
     pinMode(LED_BUILTIN, OUTPUT);
-    strip.begin();  // INITIALIZE NeoPixel strip object (REQUIRED)
-    strip.show();   // Turn OFF all pixels ASAP
-    onboard.begin();
-    onboard.fill(Adafruit_NeoPixel::ColorHSV(21845,255,1));
-    onboard.show();
+    FastLED.addLeds<NEOPIXEL, LED_PIN>(strip, LED_COUNT);
     EEPROM.begin(1);
     patt = (anim_pattern) EEPROM.read(0);
     if ((patt < 0) || (patt >= ANIM_COUNT)) patt = SOLID;
@@ -110,287 +106,291 @@ void setup() {
 }
 
 void loop() {
-    // while strip is connected
-    while (digitalRead(SENSE_PIN) == LOW) {
-        // turn on debug led when strip connected
-//        digitalWrite(LED_BUILTIN, HIGH);
-        onboard.fill(Adafruit_NeoPixel::ColorHSV(21845,255,1));
-        onboard.show();
-
-        // debounce tomfoolery
-        if (digitalRead(PATT_PIN) == LOW && !pressed) {
-            pressed = true;
-            pressed_millis = millis();
-        }
-
-        // switch anim
-        if (pressed) {
-            if (millis() - pressed_millis > DEBOUNCE_DELAY) {
-                if (digitalRead(PATT_PIN) == LOW && acted == false) {
-                    switch (patt) {
-                        case SOLID:
-                            patt = PULSE;
-                            break;
-                        case PULSE:
-                            patt = CHASE;
-                            break;
-                        case CHASE:
-                            patt = BREATHING;
-                            break;
-                        case BREATHING:
-                            patt = SOUND;
-                            break;
-                        case SOUND:
-                            patt = RAINBOW;
-                            break;
-                        case RAINBOW:
-                            patt = SOLID;
-                            break;
-                        default:
-                            break;
-                    }
-                    acted = true;
-                    EEPROM.write(0,patt);
-                    EEPROM.commit();
-                } else if (digitalRead(PATT_PIN) == HIGH && acted == true) {
-                    pressed = false;
-                    acted = false;
-                }
-            }
-        }
-
-        // if strip was disconnected
-        if (do_startup) {
-            if (millis() - frame_millis > frame_delay ||
-                    (startup == RAINBOW_IN && millis() - frame_millis > RAINBOW_FADE_FRAME_DELAY) ||
-                    (startup == RAINBOW_OUT && millis() - frame_millis > RAINBOW_FADE_FRAME_DELAY)) {
-                strip.clear();
-                switch (startup) {
-                    case UP:
-                        if (startup_next_led > (LED_COUNT - 1)) {
-                            startup_next_led--;
-                            startup = DOWN;
-                        } else {
-                            strip.setPixelColor(startup_next_led++, 0xFFFFFF);
-                            frame_millis = millis();
-                            strip.show();
-                        }
-                        break;
-                    case DOWN:
-                        if (startup_next_led < 0) {
-                            switch (patt) {
-                                case RAINBOW:
-                                    startup = RAINBOW_IN;
-                                    break;
-                                default:
-                                    do_startup = false;
-                                    pulse_next_led = 0;
-                                    memset(led_buffer, 0, LED_COUNT * sizeof(led_buffer[0]));
-                                    break;
-                            }
-                        } else {
-                            strip.setPixelColor(--startup_next_led, 0xFFFFFF);
-                            frame_millis = millis();
-                            strip.show();
-                        }
-                        break;
-                    case RAINBOW_IN:
-                        if (startup_brightness < 255) {
-                            strip.rainbow(rainbow_fpx_hue, 1, 255, ++startup_brightness);
-                            frame_millis = millis();
-                            strip.show();
-                        } else {
-                            do_startup = false;
-                            // startup = RAINBOW_OUT;
-                        }
-                        break;
-                    case RAINBOW_OUT:
-                        if (startup_brightness > 0) {
-                            strip.rainbow(rainbow_fpx_hue, 1, 255, --startup_brightness);
-                            frame_millis = millis();
-                            strip.show();
-                        } else {
-                            do_startup = false;
-                        }
-                        break;
-                    default:
-                        break;
-                }
-            }
-        } else {
-            // otherwise, do normal anims
-            strip.clear();
-            switch (patt) {
-                case RAINBOW:
-                    strip.rainbow(rainbow_fpx_hue);
-                    // update animation position
-                    if (millis() - frame_millis > ANIM_RAINBOW_FRAME_TIME) {
-                        frame_millis = millis();
-                        // scale rainbow anim cycle to 255 steps, meaning to go around
-                        // the entire hue circle in 255 steps, each step is 257 wide
-                        // whole animation will take 255 * ANIM_RAINBOW_FRAME_TIME ms
-                        rainbow_fpx_hue = rainbow_fpx_hue - 257 > 65535 ? 65535 : rainbow_fpx_hue - 257;
-                    }
-                    break;
-                case PULSE:
-                    // chase pattern startup anim
-                    // update startup animation LED count
-                    if (pulse_next_led < LED_COUNT && (millis() - pulse_millis > frame_delay_2)) {
-                        pulse_millis = millis();
-                        pulse_next_led++;
-                    }
-                    // draw output of sine8() between 0 and LED_COUNT, change offset for next draw
-                    for (int i = 0; i < pulse_next_led; i++) {
-                        // restrict brightness range between 32 and 255
-                        float scale = (255 - PULSE_Y_OFFSET) / 255.0;
-                        led_buffer[i] = scale * Adafruit_NeoPixel::sine8((5 * i) + pulse_x_offset) + PULSE_Y_OFFSET;
-                        // queue changes to lighting
-                        strip.setPixelColor(i, Adafruit_NeoPixel::ColorHSV(5461, 255, led_buffer[i]));
-                    }
-                    // update animation position
-                    if (millis() - frame_millis > ANIM_PULSE_FRAME_TIME) {
-                        frame_millis = millis();
-                        // chase anim has 255 steps, sine8() between 32 and 255 is spread across
-                        // 255 steps, whole animation will take 255 * ANIM_PULSE_FRAME_TIME ms
-                        pulse_x_offset--;
-                    }
-                    break;
-                case BREATHING:
-                    // chase pattern startup anim
-                    // update startup animation LED count
-                    if (pulse_next_led < LED_COUNT && (millis() - pulse_millis > frame_delay_2)) {
-                        pulse_millis = millis();
-                        pulse_next_led++;
-                    }
-                    // draw output of sine8() between 0 and LED_COUNT, change offset for next draw
-                    for (int i = 0; i < pulse_next_led; i++) {
-                        strip.setPixelColor(i, Adafruit_NeoPixel::ColorHSV(5461, 255, breathing_brightness));
-//                        if (breathing_brightness >= 0 && breathing_brightness < 254) {
-//                            strip.setPixelColor(i, Adafruit_NeoPixel::ColorHSV(5461, 255, 200));
-//                        }
-                    }
-                    // update animation position
-                    if (millis() - frame_millis > ANIM_BREATHING_TIME) {
-                        frame_millis = millis();
-                        if (breathing_rev) {
-                            if (breathing_brightness > 254) {
-                                breathing_brightness--;
-                                breathing_rev = false;
-                            } else {
-                                breathing_brightness++;
-                            }
-                        } else {
-                            if (breathing_brightness < 1) {
-                                breathing_brightness = 0;
-                                breathing_rev = true;
-                            } else {
-                                --breathing_brightness;
-                            }
-                        }
-                    }
-                    break;
-                case CHASE:
-                    update_anim_chase();
-                    break;
-                case SOUND:
-                    update_anim_sound();
-                    break;
-                case SOLID:
-                    // solid pattern startup anim
-                    // update startup animation LED count
-                    if (pulse_next_led < LED_COUNT && (millis() - pulse_millis > frame_delay_2)) {
-                        pulse_millis = millis();
-                        pulse_next_led++;
-                    }
-                    // only fill LEDs when pulse_next_led > 0, since 0 fills all LEDs
-
-                    if (pulse_next_led) {
-                        strip.fill(Adafruit_NeoPixel::ColorHSV(5461, 255, 255), 0, pulse_next_led);
-                    }
-                    break;
-                default:
-                    break;
-            }
-            strip.show();
-            yield();
-        }
-    }
-
-    // as soon as strip disconnects
-    digitalWrite(LED_BUILTIN, LOW);
-    onboard.fill(Adafruit_NeoPixel::ColorHSV(0,255,1));
-    onboard.show();
-    startup_brightness = 0;
-    startup_next_led = 0;
-    do_startup = true;
-    startup = UP;
+    strip[0] = CRGB::Red;
+    FastLED.show();
     yield();
 }
-
-void update_anim_sound() {
+//    // while strip is connected
+//    while (digitalRead(SENSE_PIN) == LOW) {
+//        // turn on debug led when strip connected
+////        digitalWrite(LED_BUILTIN, HIGH);
+//        onboard.fill(Adafruit_NeoPixel::ColorHSV(21845,255,1));
+//        onboard.show();
+//
+//        // debounce tomfoolery
+//        if (digitalRead(PATT_PIN) == LOW && !pressed) {
+//            pressed = true;
+//            pressed_millis = millis();
+//        }
+//
+//        // switch anim
+//        if (pressed) {
+//            if (millis() - pressed_millis > DEBOUNCE_DELAY) {
+//                if (digitalRead(PATT_PIN) == LOW && acted == false) {
+//                    switch (patt) {
+//                        case SOLID:
+//                            patt = PULSE;
+//                            break;
+//                        case PULSE:
+//                            patt = CHASE;
+//                            break;
+//                        case CHASE:
+//                            patt = BREATHING;
+//                            break;
+//                        case BREATHING:
+//                            patt = SOUND;
+//                            break;
+//                        case SOUND:
+//                            patt = RAINBOW;
+//                            break;
+//                        case RAINBOW:
+//                            patt = SOLID;
+//                            break;
+//                        default:
+//                            break;
+//                    }
+//                    acted = true;
+//                    EEPROM.write(0,patt);
+//                    EEPROM.commit();
+//                } else if (digitalRead(PATT_PIN) == HIGH && acted == true) {
+//                    pressed = false;
+//                    acted = false;
+//                }
+//            }
+//        }
+//
+//        // if strip was disconnected
+//        if (do_startup) {
+//            if (millis() - frame_millis > frame_delay ||
+//                    (startup == RAINBOW_IN && millis() - frame_millis > RAINBOW_FADE_FRAME_DELAY) ||
+//                    (startup == RAINBOW_OUT && millis() - frame_millis > RAINBOW_FADE_FRAME_DELAY)) {
+//                strip.clear();
+//                switch (startup) {
+//                    case UP:
+//                        if (startup_next_led > (LED_COUNT - 1)) {
+//                            startup_next_led--;
+//                            startup = DOWN;
+//                        } else {
+//                            strip.setPixelColor(startup_next_led++, 0xFFFFFF);
+//                            frame_millis = millis();
+//                            strip.show();
+//                        }
+//                        break;
+//                    case DOWN:
+//                        if (startup_next_led < 0) {
+//                            switch (patt) {
+//                                case RAINBOW:
+//                                    startup = RAINBOW_IN;
+//                                    break;
+//                                default:
+//                                    do_startup = false;
+//                                    pulse_next_led = 0;
+//                                    memset(led_buffer, 0, LED_COUNT * sizeof(led_buffer[0]));
+//                                    break;
+//                            }
+//                        } else {
+//                            strip.setPixelColor(--startup_next_led, 0xFFFFFF);
+//                            frame_millis = millis();
+//                            strip.show();
+//                        }
+//                        break;
+//                    case RAINBOW_IN:
+//                        if (startup_brightness < 255) {
+//                            strip.rainbow(rainbow_fpx_hue, 1, 255, ++startup_brightness);
+//                            frame_millis = millis();
+//                            strip.show();
+//                        } else {
+//                            do_startup = false;
+//                            // startup = RAINBOW_OUT;
+//                        }
+//                        break;
+//                    case RAINBOW_OUT:
+//                        if (startup_brightness > 0) {
+//                            strip.rainbow(rainbow_fpx_hue, 1, 255, --startup_brightness);
+//                            frame_millis = millis();
+//                            strip.show();
+//                        } else {
+//                            do_startup = false;
+//                        }
+//                        break;
+//                    default:
+//                        break;
+//                }
+//            }
+//        } else {
+//            // otherwise, do normal anims
+//            strip.clear();
+//            switch (patt) {
+//                case RAINBOW:
+//                    strip.rainbow(rainbow_fpx_hue);
+//                    // update animation position
+//                    if (millis() - frame_millis > ANIM_RAINBOW_FRAME_TIME) {
+//                        frame_millis = millis();
+//                        // scale rainbow anim cycle to 255 steps, meaning to go around
+//                        // the entire hue circle in 255 steps, each step is 257 wide
+//                        // whole animation will take 255 * ANIM_RAINBOW_FRAME_TIME ms
+//                        rainbow_fpx_hue = rainbow_fpx_hue - 257 > 65535 ? 65535 : rainbow_fpx_hue - 257;
+//                    }
+//                    break;
+//                case PULSE:
+//                    // chase pattern startup anim
+//                    // update startup animation LED count
+//                    if (pulse_next_led < LED_COUNT && (millis() - pulse_millis > frame_delay_2)) {
+//                        pulse_millis = millis();
+//                        pulse_next_led++;
+//                    }
+//                    // draw output of sine8() between 0 and LED_COUNT, change offset for next draw
+//                    for (int i = 0; i < pulse_next_led; i++) {
+//                        // restrict brightness range between 32 and 255
+//                        float scale = (255 - PULSE_Y_OFFSET) / 255.0;
+//                        led_buffer[i] = scale * Adafruit_NeoPixel::sine8((5 * i) + pulse_x_offset) + PULSE_Y_OFFSET;
+//                        // queue changes to lighting
+//                        strip.setPixelColor(i, Adafruit_NeoPixel::ColorHSV(5461, 255, led_buffer[i]));
+//                    }
+//                    // update animation position
+//                    if (millis() - frame_millis > ANIM_PULSE_FRAME_TIME) {
+//                        frame_millis = millis();
+//                        // chase anim has 255 steps, sine8() between 32 and 255 is spread across
+//                        // 255 steps, whole animation will take 255 * ANIM_PULSE_FRAME_TIME ms
+//                        pulse_x_offset--;
+//                    }
+//                    break;
+//                case BREATHING:
+//                    // chase pattern startup anim
+//                    // update startup animation LED count
+//                    if (pulse_next_led < LED_COUNT && (millis() - pulse_millis > frame_delay_2)) {
+//                        pulse_millis = millis();
+//                        pulse_next_led++;
+//                    }
+//                    // draw output of sine8() between 0 and LED_COUNT, change offset for next draw
+//                    for (int i = 0; i < pulse_next_led; i++) {
+//                        strip.setPixelColor(i, Adafruit_NeoPixel::ColorHSV(5461, 255, breathing_brightness));
+////                        if (breathing_brightness >= 0 && breathing_brightness < 254) {
+////                            strip.setPixelColor(i, Adafruit_NeoPixel::ColorHSV(5461, 255, 200));
+////                        }
+//                    }
+//                    // update animation position
+//                    if (millis() - frame_millis > ANIM_BREATHING_TIME) {
+//                        frame_millis = millis();
+//                        if (breathing_rev) {
+//                            if (breathing_brightness > 254) {
+//                                breathing_brightness--;
+//                                breathing_rev = false;
+//                            } else {
+//                                breathing_brightness++;
+//                            }
+//                        } else {
+//                            if (breathing_brightness < 1) {
+//                                breathing_brightness = 0;
+//                                breathing_rev = true;
+//                            } else {
+//                                --breathing_brightness;
+//                            }
+//                        }
+//                    }
+//                    break;
+//                case CHASE:
+//                    update_anim_chase();
+//                    break;
+//                case SOUND:
+//                    update_anim_sound();
+//                    break;
+//                case SOLID:
+//                    // solid pattern startup anim
+//                    // update startup animation LED count
+//                    if (pulse_next_led < LED_COUNT && (millis() - pulse_millis > frame_delay_2)) {
+//                        pulse_millis = millis();
+//                        pulse_next_led++;
+//                    }
+//                    // only fill LEDs when pulse_next_led > 0, since 0 fills all LEDs
+//
+//                    if (pulse_next_led) {
+//                        strip.fill(Adafruit_NeoPixel::ColorHSV(5461, 255, 255), 0, pulse_next_led);
+//                    }
+//                    break;
+//                default:
+//                    break;
+//            }
+//            strip.show();
+//            yield();
+//        }
+//    }
+//
+//    // as soon as strip disconnects
+//    digitalWrite(LED_BUILTIN, LOW);
+//    onboard.fill(Adafruit_NeoPixel::ColorHSV(0,255,1));
+//    onboard.show();
+//    startup_brightness = 0;
+//    startup_next_led = 0;
+//    do_startup = true;
+//    startup = UP;
+//    yield();
+//}
+//
+//void update_anim_sound() {
+////    if (pulse_next_led < LED_COUNT && (millis() - pulse_millis > frame_delay_2)) {
+////        pulse_millis = millis();
+////        pulse_next_led++;
+////    }
+////    memset(led_buffer, 0, sizeof(uint8_t) * LED_COUNT);             // clear LED buffer
+////    memset(led_buffer, 32, sizeof(uint8_t) * lvl);                  // turn on corresponding number of LEDs for sound
+////    for (int i = 0; i < pulse_next_led; i++) {
+////        // queue changes to lighting
+////        strip.setPixelColor(i, Adafruit_NeoPixel::ColorHSV(32767, 255, led_buffer[i]));
+////    }
+//
+//    // update animation position
+////    frame_millis = millis();
+//    raw_sens_val = adc.read(); //analogRead(26);              // raw mic reading, pico ADC between 0-4095
+////    ctr_sens_val = abs(raw_sens_val - 2048);    // centre on zero, 0-2047
+//    lvl = map(raw_sens_val,2048,4095,0,LED_COUNT);
+//    if (lvl > 0) {
+//        strip.fill(Adafruit_NeoPixel::ColorHSV(32767, 255, 32),0,lvl);
+//    } else {
+//        strip.clear();
+//    }
+//}
+//
+//void update_anim_chase() {
+//    // chase pattern startup anim
+//    // update startup animation LED count
 //    if (pulse_next_led < LED_COUNT && (millis() - pulse_millis > frame_delay_2)) {
 //        pulse_millis = millis();
 //        pulse_next_led++;
 //    }
-//    memset(led_buffer, 0, sizeof(uint8_t) * LED_COUNT);             // clear LED buffer
-//    memset(led_buffer, 32, sizeof(uint8_t) * lvl);                  // turn on corresponding number of LEDs for sound
+//    // draw output of sine8() between 0 and LED_COUNT, change offset for next draw
+//    memset(led_buffer, 0, sizeof(uint8_t) * LED_COUNT);
+//    if(chase_x_offset >= 0 && chase_x_offset < LED_COUNT) {
+//        for (int i = 0; i < ANIM_KR_SIZE; i++) {
+//            if (chase_x_offset - i >= 0) led_buffer[chase_x_offset - i] = 127;
+//        }
+//        led_buffer[chase_x_offset] = 255;
+//        for (int i = 0; i < ANIM_KR_SIZE; i++) {
+//            if (chase_x_offset + i <= LED_COUNT - 1) led_buffer[chase_x_offset + i] = 127;
+//        }
+//
+//    }
 //    for (int i = 0; i < pulse_next_led; i++) {
 //        // queue changes to lighting
-//        strip.setPixelColor(i, Adafruit_NeoPixel::ColorHSV(32767, 255, led_buffer[i]));
+//        strip.setPixelColor(i, Adafruit_NeoPixel::ColorHSV(5461, 255, led_buffer[i]));
 //    }
-
-    // update animation position
-//    frame_millis = millis();
-    raw_sens_val = adc.read(); //analogRead(26);              // raw mic reading, pico ADC between 0-4095
-//    ctr_sens_val = abs(raw_sens_val - 2048);    // centre on zero, 0-2047
-    lvl = map(raw_sens_val,2048,4095,0,LED_COUNT);
-    if (lvl > 0) {
-        strip.fill(Adafruit_NeoPixel::ColorHSV(32767, 255, 32),0,lvl);
-    } else {
-        strip.clear();
-    }
-}
-
-void update_anim_chase() {
-    // chase pattern startup anim
-    // update startup animation LED count
-    if (pulse_next_led < LED_COUNT && (millis() - pulse_millis > frame_delay_2)) {
-        pulse_millis = millis();
-        pulse_next_led++;
-    }
-    // draw output of sine8() between 0 and LED_COUNT, change offset for next draw
-    memset(led_buffer, 0, sizeof(uint8_t) * LED_COUNT);
-    if(chase_x_offset >= 0 && chase_x_offset < LED_COUNT) {
-        for (int i = 0; i < ANIM_KR_SIZE; i++) {
-            if (chase_x_offset - i >= 0) led_buffer[chase_x_offset - i] = 127;
-        }
-        led_buffer[chase_x_offset] = 255;
-        for (int i = 0; i < ANIM_KR_SIZE; i++) {
-            if (chase_x_offset + i <= LED_COUNT - 1) led_buffer[chase_x_offset + i] = 127;
-        }
-
-    }
-    for (int i = 0; i < pulse_next_led; i++) {
-        // queue changes to lighting
-        strip.setPixelColor(i, Adafruit_NeoPixel::ColorHSV(5461, 255, led_buffer[i]));
-    }
-    // update animation position
-    if (millis() - frame_millis > ANIM_CHASE_FRAME_TIME) {
-        frame_millis = millis();
-        if (chase_rev) {
-            if (chase_x_offset > (LED_COUNT - 2) - ANIM_KR_SIZE) {
-                chase_x_offset = (LED_COUNT - 1) - ANIM_KR_SIZE;
-                chase_rev = false;
-            } else {
-                chase_x_offset++;
-            }
-        } else {
-            if (chase_x_offset < 1 + ANIM_KR_SIZE) {
-                chase_x_offset = 1 + ANIM_KR_SIZE;
-                chase_rev = true;
-            } else {
-                --chase_x_offset;
-            }
-        }
-    }
-}
+//    // update animation position
+//    if (millis() - frame_millis > ANIM_CHASE_FRAME_TIME) {
+//        frame_millis = millis();
+//        if (chase_rev) {
+//            if (chase_x_offset > (LED_COUNT - 2) - ANIM_KR_SIZE) {
+//                chase_x_offset = (LED_COUNT - 1) - ANIM_KR_SIZE;
+//                chase_rev = false;
+//            } else {
+//                chase_x_offset++;
+//            }
+//        } else {
+//            if (chase_x_offset < 1 + ANIM_KR_SIZE) {
+//                chase_x_offset = 1 + ANIM_KR_SIZE;
+//                chase_rev = true;
+//            } else {
+//                --chase_x_offset;
+//            }
+//        }
+//    }
+//}
