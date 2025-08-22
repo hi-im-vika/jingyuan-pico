@@ -68,11 +68,17 @@ bool do_startup = true;
 bool pressed = false;
 bool acted = false;
 
+int raw_sens_val = 0;
+int ctr_sens_val = raw_sens_val;
+int sound_fill = 0;
+int lvl = 10;
+
 uint16_t frame_delay = 10.0f;
 uint16_t frame_delay_rt = 10.0f;
 uint16_t frame_delay_2 = 10.0f;
 byte startup_brightness = 0;
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
+ADCInput adc(A0);
 
 // helper function
 int transition_time(int led_count, float seconds) {
