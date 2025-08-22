@@ -8,15 +8,19 @@
 //#define LED_COUNT 171 // 240 strip
 #define LED_COUNT 32
 
-#define LED_PIN 10
-#define LED_COUNT 18
-#define SENSE_PIN 9
-#define PATT_PIN 8
+#define SENSE_PIN 6
+#define PATT_PIN 4
+
 #define DEBOUNCE_DELAY 10
-#define CHASE_Y_OFFSET 32
+#define PULSE_Y_OFFSET 32
+#define CHASE_Y_OFFSET 16
 #define RAINBOW_FADE_FRAME_DELAY 1
 #define ANIM_RAINBOW_FRAME_TIME 10
-#define ANIM_CHASE_FRAME_TIME 10
+#define ANIM_PULSE_FRAME_TIME 10
+#define ANIM_CHASE_FRAME_TIME 5
+#define ANIM_SOUND_FRAME_TIME 5
+#define ANIM_BREATHING_TIME 5
+#define ANIM_KR_SIZE 10
 
 enum anim_state {
     DISCONNECTED,
