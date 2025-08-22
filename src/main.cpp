@@ -32,9 +32,13 @@ enum anim_state {
 };
 
 enum anim_pattern {
-    RAINBOW,
+    SOLID,
+    PULSE,
     CHASE,
-    SOLID
+    BREATHING,
+    SOUND,
+    RAINBOW,
+    ANIM_COUNT
 };
 
 // globals
