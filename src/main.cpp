@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include <ADCInput.h>
 #include <FastLED.h>
 #include <EEPROM.h>
 
@@ -79,7 +78,6 @@ uint16_t frame_delay_2 = 10.0f;
 byte startup_brightness = 0;
 CRGB strip[LED_COUNT];
 //CRGB onboard[1];
-ADCInput adc(A0);
 
 void update_anim_chase();
 void update_anim_sound();
@@ -91,8 +89,6 @@ int transition_time(int led_count, float seconds) {
 
 void setup() {
     analogReadResolution(12);
-    adc.setBuffers(4, 32);
-    adc.begin(2000);
     pinMode(SENSE_PIN, INPUT_PULLUP);
     pinMode(PATT_PIN, INPUT_PULLUP);
     pinMode(LED_BUILTIN, OUTPUT);
