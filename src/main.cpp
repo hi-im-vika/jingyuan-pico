@@ -96,7 +96,7 @@ void setup() {
     pinMode(SENSE_PIN, INPUT_PULLUP);
     pinMode(PATT_PIN, INPUT_PULLUP);
     pinMode(LED_BUILTIN, OUTPUT);
-    FastLED.addLeds<NEOPIXEL, LED_PIN>(strip, LED_COUNT);
+    CFastLED::addLeds<NEOPIXEL, LED_PIN>(strip, LED_COUNT);
     EEPROM.begin(1);
     patt = (anim_pattern) EEPROM.read(0);
     if ((patt < 0) || (patt >= ANIM_COUNT)) patt = SOLID;
