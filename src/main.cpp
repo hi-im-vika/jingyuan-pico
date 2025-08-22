@@ -54,9 +54,13 @@ unsigned long pulse_millis = 0;
 uint8_t led_buffer[LED_COUNT] = {0 };
 
 int16_t rainbow_fpx_hue = 65535;
-uint8_t chase_array[LED_COUNT] = { 0 };
-uint8_t chase_x_offset = 255;
-uint8_t chase_next_led = 0;
+uint8_t pulse_x_offset = 255;
+uint8_t pulse_next_led = 0;
+int chase_x_offset = 0 + ANIM_KR_SIZE;
+bool chase_rev = true;
+int breathing_brightness = 255;
+bool breathing_rev = false;
+
 int startup_next_led = 0;
 bool do_startup = true;
 
