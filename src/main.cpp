@@ -90,6 +90,9 @@ int transition_time(int led_count, float seconds) {
 }
 
 void setup() {
+    analogReadResolution(12);
+    adc.setBuffers(4, 32);
+    adc.begin(2000);
     pinMode(SENSE_PIN, INPUT_PULLUP);
     pinMode(PATT_PIN, INPUT_PULLUP);
     pinMode(LED_BUILTIN, OUTPUT);
