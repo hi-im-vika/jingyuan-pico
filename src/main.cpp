@@ -1,6 +1,12 @@
 #include <Arduino.h>
 #include <ADCInput.h>
 #include <Adafruit_NeoPixel.h>
+#include <EEPROM.h>
+
+#define LED_PIN 5
+//#define LED_COUNT 142   // 200 strip
+//#define LED_COUNT 171 // 240 strip
+#define LED_COUNT 32
 
 #define LED_PIN 10
 #define LED_COUNT 18
