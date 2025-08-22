@@ -298,14 +298,14 @@ void loop() {
                 case SOLID:
                     // solid pattern startup anim
                     // update startup animation LED count
-                    if (chase_next_led < LED_COUNT && (millis() - chase_millis > frame_delay_2)) {
-                        chase_millis = millis();
-                        chase_next_led++;
+                    if (pulse_next_led < LED_COUNT && (millis() - pulse_millis > frame_delay_2)) {
+                        pulse_millis = millis();
+                        pulse_next_led++;
                     }
-                    // only fill LEDs when chase_next_led > 0, since 0 fills all LEDs
+                    // only fill LEDs when pulse_next_led > 0, since 0 fills all LEDs
 
-                    if (chase_next_led) {
-                        strip.fill(Adafruit_NeoPixel::ColorHSV(5461, 255, 255), 0, chase_next_led);
+                    if (pulse_next_led) {
+                        strip.fill(Adafruit_NeoPixel::ColorHSV(5461, 255, 255), 0, pulse_next_led);
                     }
                     break;
                 default:
