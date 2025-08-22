@@ -255,6 +255,46 @@ void loop() {
                         pulse_x_offset--;
                     }
                     break;
+                case BREATHING:
+                    // chase pattern startup anim
+                    // update startup animation LED count
+                    if (pulse_next_led < LED_COUNT && (millis() - pulse_millis > frame_delay_2)) {
+                        pulse_millis = millis();
+                        pulse_next_led++;
+                    }
+                    // draw output of sine8() between 0 and LED_COUNT, change offset for next draw
+                    for (int i = 0; i < pulse_next_led; i++) {
+                        strip.setPixelColor(i, Adafruit_NeoPixel::ColorHSV(5461, 255, breathing_brightness));
+//                        if (breathing_brightness >= 0 && breathing_brightness < 254) {
+//                            strip.setPixelColor(i, Adafruit_NeoPixel::ColorHSV(5461, 255, 200));
+//                        }
+                    }
+                    // update animation position
+                    if (millis() - frame_millis > ANIM_BREATHING_TIME) {
+                        frame_millis = millis();
+                        if (breathing_rev) {
+                            if (breathing_brightness > 254) {
+                                breathing_brightness--;
+                                breathing_rev = false;
+                            } else {
+                                breathing_brightness++;
+                            }
+                        } else {
+                            if (breathing_brightness < 1) {
+                                breathing_brightness = 0;
+                                breathing_rev = true;
+                            } else {
+                                --breathing_brightness;
+                            }
+                        }
+                    }
+                    break;
+                case CHASE:
+                    update_anim_chase();
+                    break;
+                case SOUND:
+                    update_anim_sound();
+                    break;
                 case SOLID:
                     // solid pattern startup anim
                     // update startup animation LED count
