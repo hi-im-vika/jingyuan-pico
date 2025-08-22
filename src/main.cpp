@@ -80,6 +80,9 @@ byte startup_brightness = 0;
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 ADCInput adc(A0);
 
+void update_anim_chase();
+void update_anim_sound();
+
 // helper function
 int transition_time(int led_count, float seconds) {
     return int(float((seconds / led_count) * 1000.0f));
