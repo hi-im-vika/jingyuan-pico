@@ -326,3 +326,71 @@ void loop() {
     startup = UP;
     yield();
 }
+
+void update_anim_sound() {
+//    if (pulse_next_led < LED_COUNT && (millis() - pulse_millis > frame_delay_2)) {
+//        pulse_millis = millis();
+//        pulse_next_led++;
+//    }
+//    memset(led_buffer, 0, sizeof(uint8_t) * LED_COUNT);             // clear LED buffer
+//    memset(led_buffer, 32, sizeof(uint8_t) * lvl);                  // turn on corresponding number of LEDs for sound
+//    for (int i = 0; i < pulse_next_led; i++) {
+//        // queue changes to lighting
+//        strip.setPixelColor(i, Adafruit_NeoPixel::ColorHSV(32767, 255, led_buffer[i]));
+//    }
+
+    // update animation position
+//    frame_millis = millis();
+    raw_sens_val = adc.read(); //analogRead(26);              // raw mic reading, pico ADC between 0-4095
+//    ctr_sens_val = abs(raw_sens_val - 2048);    // centre on zero, 0-2047
+    lvl = map(raw_sens_val,2048,4095,0,LED_COUNT);
+    if (lvl > 0) {
+        strip.fill(Adafruit_NeoPixel::ColorHSV(32767, 255, 32),0,lvl);
+    } else {
+        strip.clear();
+    }
+}
+
+void update_anim_chase() {
+    // chase pattern startup anim
+    // update startup animation LED count
+    if (pulse_next_led < LED_COUNT && (millis() - pulse_millis > frame_delay_2)) {
+        pulse_millis = millis();
+        pulse_next_led++;
+    }
+    // draw output of sine8() between 0 and LED_COUNT, change offset for next draw
+    memset(led_buffer, 0, sizeof(uint8_t) * LED_COUNT);
+    if(chase_x_offset >= 0 && chase_x_offset < LED_COUNT) {
+        for (int i = 0; i < ANIM_KR_SIZE; i++) {
+            if (chase_x_offset - i >= 0) led_buffer[chase_x_offset - i] = 127;
+        }
+        led_buffer[chase_x_offset] = 255;
+        for (int i = 0; i < ANIM_KR_SIZE; i++) {
+            if (chase_x_offset + i <= LED_COUNT - 1) led_buffer[chase_x_offset + i] = 127;
+        }
+
+    }
+    for (int i = 0; i < pulse_next_led; i++) {
+        // queue changes to lighting
+        strip.setPixelColor(i, Adafruit_NeoPixel::ColorHSV(5461, 255, led_buffer[i]));
+    }
+    // update animation position
+    if (millis() - frame_millis > ANIM_CHASE_FRAME_TIME) {
+        frame_millis = millis();
+        if (chase_rev) {
+            if (chase_x_offset > (LED_COUNT - 2) - ANIM_KR_SIZE) {
+                chase_x_offset = (LED_COUNT - 1) - ANIM_KR_SIZE;
+                chase_rev = false;
+            } else {
+                chase_x_offset++;
+            }
+        } else {
+            if (chase_x_offset < 1 + ANIM_KR_SIZE) {
+                chase_x_offset = 1 + ANIM_KR_SIZE;
+                chase_rev = true;
+            } else {
+                --chase_x_offset;
+            }
+        }
+    }
+}
