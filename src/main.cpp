@@ -150,6 +150,8 @@ void loop() {
                             break;
                     }
                     acted = true;
+                    EEPROM.write(0,patt);
+                    EEPROM.commit();
                 } else if (digitalRead(PATT_PIN) == HIGH && acted == true) {
                     pressed = false;
                     acted = false;
