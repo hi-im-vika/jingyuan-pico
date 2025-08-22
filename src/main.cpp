@@ -51,6 +51,8 @@ unsigned long frame_millis = 0;
 unsigned long pulse_millis = 0;
 
 // anims
+uint8_t led_buffer[LED_COUNT] = {0 };
+
 int16_t rainbow_fpx_hue = 65535;
 uint8_t chase_array[LED_COUNT] = { 0 };
 uint8_t chase_x_offset = 255;
