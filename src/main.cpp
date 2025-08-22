@@ -179,14 +179,13 @@ void loop() {
                     case DOWN:
                         if (startup_next_led < 0) {
                             switch (patt) {
-                                case CHASE:
-                                case SOLID:
-                                    do_startup = false;
-                                    chase_next_led = 0;
-                                    memset(chase_array, 0, LED_COUNT * sizeof(chase_array[0]));
+                                case RAINBOW:
+                                    startup = RAINBOW_IN;
                                     break;
                                 default:
-                                    startup = RAINBOW_IN;
+                                    do_startup = false;
+                                    pulse_next_led = 0;
+                                    memset(led_buffer, 0, LED_COUNT * sizeof(led_buffer[0]));
                                     break;
                             }
                         } else {
