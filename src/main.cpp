@@ -98,6 +98,12 @@ void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
     strip.begin();  // INITIALIZE NeoPixel strip object (REQUIRED)
     strip.show();   // Turn OFF all pixels ASAP
+    onboard.begin();
+    onboard.fill(Adafruit_NeoPixel::ColorHSV(21845,255,1));
+    onboard.show();
+    EEPROM.begin(1);
+    patt = (anim_pattern) EEPROM.read(0);
+    if ((patt < 0) || (patt >= ANIM_COUNT)) patt = SOLID;
     frame_delay = transition_time(LED_COUNT, 0.5f);
     frame_delay_rt = transition_time(LED_COUNT * 2, 0.5f);
     frame_delay_2 = transition_time(LED_COUNT, 0.25f);
