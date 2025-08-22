@@ -113,7 +113,9 @@ void loop() {
     // while strip is connected
     while (digitalRead(SENSE_PIN) == LOW) {
         // turn on debug led when strip connected
-        digitalWrite(LED_BUILTIN, HIGH);
+//        digitalWrite(LED_BUILTIN, HIGH);
+        onboard.fill(Adafruit_NeoPixel::ColorHSV(21845,255,1));
+        onboard.show();
 
         // debounce tomfoolery
         if (digitalRead(PATT_PIN) == LOW && !pressed) {
