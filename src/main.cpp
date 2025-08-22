@@ -318,6 +318,8 @@ void loop() {
 
     // as soon as strip disconnects
     digitalWrite(LED_BUILTIN, LOW);
+    onboard.fill(Adafruit_NeoPixel::ColorHSV(0,255,1));
+    onboard.show();
     startup_brightness = 0;
     startup_next_led = 0;
     do_startup = true;
