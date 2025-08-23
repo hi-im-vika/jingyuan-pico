@@ -61,6 +61,8 @@ uint8_t sound_peak = 0;                                              // Used for
 uint8_t breathing_progress = 255;
 bool breathing_rev = false;
 uint8_t wave_offset = 255;
+uint8_t confetti_hue = 0;
+
 uint8_t sound_dot_count = 0;                                              // Frame counter for delaying dot-falling speed
 uint8_t sound_vol_count = 0;                                              // Frame counter for storing past volume data
 int sound_vol[SOUND_SAMPLES];                                              // Collection of prior volume samples
@@ -82,12 +84,15 @@ CRGB onboard[ONBOARD_LED_COUNT];
 
 // forward function declarations, from fastled demo
 void patt_solid();
+void patt_solid_glitter();
 void patt_scroll();
 void patt_beatsin8_one();
 void patt_beatsin8_four();
 void patt_breathing();
 void patt_sound();
 void patt_rainbow();
+void patt_confetti();
+
 void patt_startup();
 void next_pattern();
 void poll_button();
@@ -96,12 +101,14 @@ void poll_button();
 typedef void (*pattern_list_t[])();
 pattern_list_t patterns = {
         patt_solid,
+        patt_solid_glitter,
         patt_scroll,
         patt_beatsin8_one,
         patt_beatsin8_four,
         patt_breathing,
         patt_sound,
-        patt_rainbow
+        patt_rainbow,
+        patt_confetti
 };
 uint8_t current_pattern_idx = 0;
 //
@@ -233,6 +240,14 @@ void patt_solid() {
     fill_solid(strip,startup_idx,CHSV(PRIMARY_HUE,255,255));
 }
 
+void patt_solid_glitter() {
+    fill_solid(strip,startup_idx,CHSV(PRIMARY_HUE,255,255));
+    if( random8() < 80) {
+        uint8_t rand_led = random16(LED_COUNT);
+        if (rand_led < startup_idx) strip[rand_led] += CRGB::White;
+    }
+}
+
 void patt_scroll() {
     for (int i = 0; i < LED_COUNT; i++) {
         strip[i] = hsv2rgb_spectrum(CHSV(PRIMARY_SPEC_HUE,255, map(quadwave8(5 * i + wave_offset),0,255,WAVE_MIN,WAVE_MAX)));
@@ -343,4 +358,12 @@ void patt_sound() {
 void patt_rainbow() {
     EVERY_N_MILLIS(RAINBOW_UPDATE_TIME) rainbow_hue--;
     fl::fill_rainbow_circular(strip,LED_COUNT,rainbow_hue,false);
+}
+
+// from fastled demo
+void patt_confetti() {
+    confetti_hue++;
+    fadeToBlackBy( strip, LED_COUNT, 5);
+    int pos = random16(LED_COUNT);
+    strip[pos] += CHSV( confetti_hue + random8(64), 200, 255);
 }
