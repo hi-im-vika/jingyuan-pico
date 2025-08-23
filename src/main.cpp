@@ -186,7 +186,7 @@ void loop() {
                         }
                         break;
                     case DOWN:
-                        if (startup_next_led < 0) {
+                        if (!startup_next_led) {
                             switch (patt) {
                                 case RAINBOW:
                                     startup = RAINBOW_IN;
