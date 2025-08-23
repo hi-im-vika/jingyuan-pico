@@ -206,7 +206,7 @@ void loop() {
                     case RAINBOW_IN:
                         if (startup_brightness < 255) {
                             fl::fill_rainbow_circular(strip, LED_COUNT, rainbow_fpx_hue);
-                            FastLED.setBrightness(++startup_brightness);
+                            FastLED.setBrightness(ease8InOutCubic(++startup_brightness));
                             frame_millis = millis();
                             FastLED.show();
                         } else {
@@ -217,7 +217,7 @@ void loop() {
                     case RAINBOW_OUT:
                         if (startup_brightness > 0) {
                             fl::fill_rainbow_circular(strip, LED_COUNT, rainbow_fpx_hue);
-                            FastLED.setBrightness(--startup_brightness);
+                            FastLED.setBrightness(ease8InOutCubic(--startup_brightness));
                             frame_millis = millis();
                             FastLED.show();
                         } else {
