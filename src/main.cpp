@@ -10,11 +10,13 @@
 #define LED_COUNT 142   // 200 strip
 //#define LED_COUNT 171 // 240 strip
 //#define LED_COUNT 32
+#define ONBOARD_LED_COUNT 1
 
-#define LED_PIN 5       // data pin for LED strip
-#define SENSE_PIN 6     // sense pin to detect if strip is connected
-#define PATT_PIN 4      // button pin to switch animations
-#define MIC_PIN 26      // mic pin for sound reactive fx
+#define LED_PIN 5                   // data pin for LED strip
+#define SENSE_PIN 6                 // sense pin to detect if strip is connected
+#define PATT_PIN 4                  // button pin to switch animations
+#define MIC_PIN 26                  // mic pin for sound reactive fx
+#define ONBOARD_NEOPIXEL_PIN    16  // pin for onboard WS2812-2020 on RP2040-Zero
 
 #define PRIMARY_HUE 29
 
@@ -64,7 +66,7 @@ uint16_t frame_delay_rt = 10.0f;
 uint16_t frame_delay_2 = 10.0f;
 uint8_t startup_brightness = 0;
 CRGB strip[LED_COUNT];
-//CRGB onboard[1];
+CRGB onboard[ONBOARD_LED_COUNT];
 
 // forward function declarations, from fastled demo
 void patt_solid();
@@ -91,8 +93,9 @@ void setup() {
     analogReadResolution(12);
     pinMode(SENSE_PIN, INPUT_PULLUP);
     pinMode(PATT_PIN, INPUT_PULLUP);
-    pinMode(LED_BUILTIN, OUTPUT);
+//    pinMode(LED_BUILTIN, OUTPUT);     // only needed if using original pi pico board
     CFastLED::addLeds<NEOPIXEL, LED_PIN>(strip, LED_COUNT);
+    CFastLED::addLeds<NEOPIXEL, ONBOARD_NEOPIXEL_PIN>(onboard, ONBOARD_LED_COUNT);
     FastLED.clear();
     FastLED.show();     // turn off all LEDs ASAP
     EEPROM.begin(1);    // read last chosen animation
@@ -104,9 +107,7 @@ void loop() {
     // while strip is connected
     while (digitalRead(SENSE_PIN) == LOW) {
         // turn on debug led when strip connected
-//        digitalWrite(LED_BUILTIN, HIGH);
-//        onboard.fill(Adafruit_NeoPixel::ColorHSV(21845,255,1));
-//        onboard.show();
+        onboard[0] = CRGB(0,1,0);
 
         // debounce tomfoolery
         if (digitalRead(PATT_PIN) == LOW && !pressed) {
@@ -128,16 +129,14 @@ void loop() {
                 }
             }
         }
-
         patterns[current_pattern_idx]();
         FastLED.show();
         FastLED.delay(1000/120);
     }
 
     // as soon as strip disconnects
-//    digitalWrite(LED_BUILTIN, LOW);
-//    onboard.fill(Adafruit_NeoPixel::ColorHSV(0,255,1));
-//    onboard.show();
+    onboard[0] = CRGB(1,0,0);
+    FastLED.show();
     startup_brightness = 0;
     startup_next_led = 0;
     do_startup = true;
