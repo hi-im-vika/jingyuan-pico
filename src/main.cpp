@@ -23,6 +23,9 @@
 #define PRIMARY_SPEC_HUE 26
 #define SWEEP_FADE_BY 255
 
+#define WAVE_MAX 255
+#define WAVE_MIN 32
+
 #define PATT_IDX_RAINBOW 5
 
 #define RAINBOW_UPDATE_TIME 10
@@ -53,6 +56,7 @@ uint8_t rainbow_hue = 0;
 uint8_t sound_peak = 0;                                              // Used for falling dot
 uint8_t breathing_progress = 255;
 bool breathing_rev = false;
+uint8_t wave_offset = 255;
 uint8_t sound_dot_count = 0;                                              // Frame counter for delaying dot-falling speed
 uint8_t sound_vol_count = 0;                                              // Frame counter for storing past volume data
 int sound_vol[SOUND_SAMPLES];                                              // Collection of prior volume samples
@@ -74,7 +78,7 @@ CRGB onboard[ONBOARD_LED_COUNT];
 
 // forward function declarations, from fastled demo
 void patt_solid();
-void patt_wave();
+void patt_scroll();
 void patt_beatsin8();
 void patt_breathing();
 void patt_sound();
@@ -87,7 +91,7 @@ void poll_button();
 typedef void (*pattern_list_t[])();
 pattern_list_t patterns = {
         patt_solid,
-        patt_wave,
+        patt_scroll,
         patt_beatsin8,
         patt_breathing,
         patt_sound,
@@ -216,8 +220,11 @@ void patt_solid() {
     fill_solid(strip,startup_idx,CHSV(PRIMARY_HUE,255,255));
 }
 
-void patt_wave() {
-    fill_solid(strip,LED_COUNT,CHSV(20,255,255));
+void patt_scroll() {
+    for (int i = 0; i < LED_COUNT; i++) {
+        strip[i] = hsv2rgb_spectrum(CHSV(PRIMARY_SPEC_HUE,255, map(quadwave8(5 * i + wave_offset),0,255,WAVE_MIN,WAVE_MAX)));
+    }
+    wave_offset--;
 }
 
 void patt_beatsin8() {
