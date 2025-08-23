@@ -51,6 +51,8 @@ const CRGB PRIMARY_RGB = hsv2rgb_rainbow(PRIMARY_HSV);
 // anims
 uint8_t rainbow_hue = 0;
 uint8_t sound_peak = 0;                                              // Used for falling dot
+uint8_t breathing_progress = 255;
+bool breathing_rev = false;
 uint8_t sound_dot_count = 0;                                              // Frame counter for delaying dot-falling speed
 uint8_t sound_vol_count = 0;                                              // Frame counter for storing past volume data
 int sound_vol[SOUND_SAMPLES];                                              // Collection of prior volume samples
@@ -227,7 +229,24 @@ void patt_beatsin8() {
 }
 
 void patt_breathing() {
-    fill_solid(strip,LED_COUNT,CHSV(40,255,255));
+    fill_solid(strip,startup_idx,hsv2rgb_spectrum(CHSV(PRIMARY_SPEC_HUE,255, ease8InOutQuad(breathing_progress))));
+    if (!breathing_rev) {
+        if (breathing_progress - 1 > 0) {
+            breathing_progress--;
+        } else if (breathing_progress == 0) {
+            breathing_rev = true;
+        } else {
+            breathing_progress = 0;
+        }
+    } else {
+        if (breathing_progress + 1 < 255) {
+            breathing_progress++;
+        } else if (breathing_progress == 255) {
+            breathing_rev = false;
+        } else {
+            breathing_progress = 255;
+        }
+    }
 }
 
 // based on neopixel sound reactive pendant and https://github.com/atuline/FastLED-SoundReactive
