@@ -33,19 +33,15 @@
 #define SOUND_TOP (LED_COUNT + 2)       // Allow dot to go slightly off scale
 #define SOUND_PEAK_FALL 5               // Rate of sound_peak falling dot
 
-enum anim_state {
-    DISCONNECTED,
+enum sweep_state_t {
     UP,
     DOWN,
-    RAINBOW_IN,
-    RAINBOW_OUT,
     STOP
 };
 
 // globals
 // state machine
-anim_state state = DISCONNECTED;
-anim_state startup = UP;
+sweep_state_t sweep_state = UP;
 unsigned long pressed_millis = 0;
 unsigned long frame_millis = 0;
 unsigned long pulse_millis = 0;
@@ -133,9 +129,9 @@ void loop() {
     onboard[0] = CRGB(1,0,0);
     FastLED.show();
     startup_brightness = 0;
-    startup_next_led = 0;
+    sweep_idx = 0;
     do_startup = true;
-    startup = UP;
+    sweep_state = UP;
 
     // let microcontroller do its own thing in the meantime
     while (digitalRead(SENSE_PIN) == HIGH) {
@@ -171,17 +167,40 @@ void poll_button() {
 }
 
 void patt_startup() {
-    switch (current_pattern_idx) {
-        case PATT_IDX_RAINBOW:
-            if (startup_brightness < 255) {
-                fl::fill_rainbow_circular(strip,LED_COUNT,rainbow_hue,false);
-                FastLED.setBrightness(++startup_brightness);
-            } else {
-                do_startup = false;
-            }
-            break;
-        default:
-            break;
+    if (sweep_state != STOP) {
+        switch (sweep_state) {
+            case UP:
+                if (sweep_idx + 1 < LED_COUNT) {
+                    fadeToBlackBy(strip,LED_COUNT,SWEEP_FADE_BY);
+                    strip[sweep_idx++] = CRGB::White;
+                } else {
+                    sweep_state = DOWN;
+                }
+                break;
+            case DOWN:
+                fadeToBlackBy(strip,LED_COUNT,SWEEP_FADE_BY);
+                if (sweep_idx - 1 < LED_COUNT) {
+                    strip[--sweep_idx] = CRGB::White;
+                } else {
+                    sweep_state = STOP;
+                }
+                break;
+            default:
+                break;
+        }
+    } else {
+        switch (current_pattern_idx) {
+            case PATT_IDX_RAINBOW:
+                if (startup_brightness < 255) {
+                    fl::fill_rainbow_circular(strip,LED_COUNT,rainbow_hue,false);
+                    FastLED.setBrightness(++startup_brightness);
+                } else {
+                    do_startup = false;
+                }
+                break;
+            default:
+                break;
+        }
     }
 }
 
