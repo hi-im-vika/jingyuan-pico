@@ -30,8 +30,10 @@
 #define WAVE_MIN 32
 
 #define PATT_IDX_RAINBOW 7
+#define PATT_IDX_RAINBOW_DUAL 8
 
 #define RAINBOW_UPDATE_TIME 10
+#define RAINBOW_DUAL_UPDATE_TIME 5
 #define BREATHING_UPDATE_TIME 5
 
 #define DEBOUNCE_DELAY 10
@@ -79,7 +81,7 @@ bool pressed = false;
 bool acted = false;
 
 uint8_t startup_rainbow_brightness = 0;
-CRGB strip[LED_COUNT];
+CRGBArray<LED_COUNT> strip;
 CRGB onboard[ONBOARD_LED_COUNT];
 
 // forward function declarations, from fastled demo
@@ -91,6 +93,7 @@ void patt_beatsin8_four();
 void patt_breathing();
 void patt_sound();
 void patt_rainbow();
+void patt_rainbow_dual();
 void patt_confetti();
 
 void patt_startup();
@@ -108,6 +111,7 @@ pattern_list_t patterns = {
         patt_breathing,
         patt_sound,
         patt_rainbow,
+        patt_rainbow_dual,
         patt_confetti
 };
 uint8_t current_pattern_idx = 0;
@@ -155,7 +159,9 @@ void loop() {
     // as soon as strip disconnects, do cleanup
     onboard[0] = CRGB(1,0,0);
     FastLED.show();
-    if (current_pattern_idx == PATT_IDX_RAINBOW) startup_rainbow_brightness = 0;
+    if ((current_pattern_idx == PATT_IDX_RAINBOW) || (current_pattern_idx == (PATT_IDX_RAINBOW_DUAL))) {
+        startup_rainbow_brightness = 0;
+    }
     sweep_idx = 0;
     startup_idx = 0;
     do_startup = true;
@@ -221,17 +227,30 @@ void patt_startup() {
                 break;
         }
     } else {
-        if (current_pattern_idx == PATT_IDX_RAINBOW) {
-            if (startup_rainbow_brightness < 255) {
-                fl::fill_rainbow_circular(strip,LED_COUNT,rainbow_hue,false);
-                FastLED.setBrightness(++startup_rainbow_brightness);
-            } else {
-                startup_idx = LED_COUNT;
+        switch (current_pattern_idx) {
+            case PATT_IDX_RAINBOW:
+                if (startup_rainbow_brightness < 255) {
+                    fl::fill_rainbow_circular(strip,LED_COUNT,rainbow_hue,false);
+                    FastLED.setBrightness(++startup_rainbow_brightness);
+                } else {
+                    startup_idx = LED_COUNT;
+                    do_startup = false;
+                }
+                break;
+            case (PATT_IDX_RAINBOW_DUAL):
+                if (startup_rainbow_brightness < 255) {
+                    fl::fill_rainbow_circular(strip(0,LED_COUNT/2),LED_COUNT/2,rainbow_hue,true);
+                    fl::fill_rainbow_circular(strip(LED_COUNT/2 + 1, LED_COUNT),LED_COUNT/2,rainbow_hue,false);
+                    FastLED.setBrightness(++startup_rainbow_brightness);
+                } else {
+                    startup_idx = LED_COUNT;
+                    do_startup = false;
+                }
+                break;
+            default:
+                fadeToBlackBy(strip,LED_COUNT,255);
                 do_startup = false;
-            }
-        } else {
-            fadeToBlackBy(strip,LED_COUNT,255);
-            do_startup = false;
+                break;
         }
     }
 }
@@ -360,6 +379,12 @@ void patt_sound() {
 void patt_rainbow() {
     EVERY_N_MILLIS(RAINBOW_UPDATE_TIME) rainbow_hue--;
     fl::fill_rainbow_circular(strip,LED_COUNT,rainbow_hue,false);
+}
+
+void patt_rainbow_dual() {
+    EVERY_N_MILLIS(RAINBOW_DUAL_UPDATE_TIME) rainbow_hue--;
+    fl::fill_rainbow_circular(strip(0,LED_COUNT/2),LED_COUNT/2,rainbow_hue,true);
+    fl::fill_rainbow_circular(strip(LED_COUNT/2 + 1, LED_COUNT),LED_COUNT/2,rainbow_hue,false);
 }
 
 // from fastled demo
