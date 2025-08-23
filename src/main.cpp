@@ -257,7 +257,7 @@ void loop() {
                     // only fill LEDs when pulse_next_led > 0, since 0 fills all LEDs
 
                     if (pulse_next_led) {
-                        fl::fill_solid(strip, pulse_next_led, CHSV(PRIMARY_HUE, 255, 255));
+                        fl::fill_solid(strip, pulse_next_led, hsv2rgb_spectrum(CHSV(PRIMARY_HUE, 255, 255)));
                     }
                     break;
                 default:
@@ -302,9 +302,9 @@ void update_anim_pulse() {
     for (int i = 0; i < pulse_next_led; i++) {
         // restrict brightness range between 32 and 255
         float scale = (255 - PULSE_Y_OFFSET) / 255.0;
-        led_buffer[i] = scale * sin8((5 * i) + pulse_x_offset) + PULSE_Y_OFFSET;
+        led_buffer[i] = scale * cubicwave8((5 * i) + pulse_x_offset) + PULSE_Y_OFFSET;
         // queue changes to lighting
-        strip[i] = CHSV(PRIMARY_HUE, 255, led_buffer[i]);
+        strip[i] = hsv2rgb_spectrum(CHSV(PRIMARY_HUE, 255, led_buffer[i]));
     }
     // update animation position
     if (millis() - frame_millis > ANIM_PULSE_FRAME_TIME) {
@@ -324,7 +324,7 @@ void update_anim_breathing() {
     }
     // draw output of sine8() between 0 and LED_COUNT, change offset for next draw
     for (int i = 0; i < pulse_next_led; i++) {
-        fl::fill_solid(strip, pulse_next_led, CHSV(PRIMARY_HUE, 255, breathing_brightness));
+        fl::fill_solid(strip, pulse_next_led, hsv2rgb_spectrum(CHSV(PRIMARY_HUE, 255, breathing_brightness)));
 //                        if (breathing_brightness >= 0 && breathing_brightness < 254) {
 //                            strip.setPixelColor(i, Adafruit_NeoPixel::ColorHSV(5461, 255, 200));
 //                        }
@@ -374,11 +374,11 @@ void update_anim_sound() {
     // Color pixels based on rainbow gradient
     for (i = 0; i < LED_COUNT; i++) {
         if (i >= height) strip[i].setRGB(0, 0, 0);
-        else strip[i] = CHSV(PRIMARY_HUE, 255, 255);
+        else strip[i] = hsv2rgb_spectrum(CHSV(PRIMARY_HUE, 255, 255));
     }
 
     // Draw sound_peak dot
-    if (sound_peak > 0 && sound_peak <= LED_COUNT - 1) strip[sound_peak] = CHSV(0, 0, 255);
+    if (sound_peak > 0 && sound_peak <= LED_COUNT - 1) strip[sound_peak] = hsv2rgb_spectrum(CHSV(0, 0, 255));
 
 // Every few frames, make the sound_peak pixel drop by 1:
 
@@ -429,7 +429,7 @@ void update_anim_chase() {
     }
     for (int i = 0; i < pulse_next_led; i++) {
         // queue changes to lighting
-        strip[i] = CHSV(PRIMARY_HUE, 255, led_buffer[i]);
+        strip[i] = hsv2rgb_spectrum(CHSV(PRIMARY_HUE, 255, led_buffer[i]));
     }
     // update animation position
     if (millis() - frame_millis > ANIM_CHASE_FRAME_TIME) {
