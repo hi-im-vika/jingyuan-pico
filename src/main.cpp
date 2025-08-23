@@ -118,12 +118,12 @@ void loop() {
         // switch anim
         if (pressed) {
             if (millis() - pressed_millis > DEBOUNCE_DELAY) {
-                if (digitalRead(PATT_PIN) == LOW && acted == false) {
+                if (digitalRead(PATT_PIN) == LOW && !acted) {
                     next_pattern();
                     acted = true;
                     EEPROM.write(0, current_pattern_idx);
                     EEPROM.commit();
-                } else if (digitalRead(PATT_PIN) == HIGH && acted == true) {
+                } else if (digitalRead(PATT_PIN) == HIGH && acted) {
                     pressed = false;
                     acted = false;
                 }
