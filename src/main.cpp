@@ -120,14 +120,18 @@ void loop() {
         yield();
     }
 
-    // as soon as strip disconnects
+    // as soon as strip disconnects, do cleanup
     onboard[0] = CRGB(1,0,0);
     FastLED.show();
     startup_brightness = 0;
     startup_next_led = 0;
     do_startup = true;
     startup = UP;
-    yield();
+
+    // let microcontroller do its own thing in the meantime
+    while (digitalRead(SENSE_PIN) == HIGH) {
+        yield();
+    }
 }
 
 void next_pattern() {
