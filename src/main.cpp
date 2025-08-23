@@ -149,7 +149,7 @@ void next_pattern() {
 }
 
 void patt_solid() {
-    fill_solid(strip,LED_COUNT,CHSV(10,255,255));
+    fill_solid(strip,LED_COUNT,CHSV(PRIMARY_HUE,255,255));
 }
 
 void patt_pulse() {
