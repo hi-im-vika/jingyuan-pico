@@ -32,6 +32,7 @@
 #define PATT_IDX_RAINBOW 5
 
 #define RAINBOW_UPDATE_TIME 10
+#define BREATHING_UPDATE_TIME 5
 
 #define DEBOUNCE_DELAY 10
 
@@ -260,21 +261,23 @@ void patt_beatsin8_four() {
 
 void patt_breathing() {
     fill_solid(strip,startup_idx,hsv2rgb_spectrum(CHSV(PRIMARY_SPEC_HUE,255, ease8InOutQuad(breathing_progress))));
-    if (!breathing_rev) {
-        if (breathing_progress - 1 > 0) {
-            breathing_progress--;
-        } else if (breathing_progress == 0) {
-            breathing_rev = true;
+    EVERY_N_MILLIS(BREATHING_UPDATE_TIME) {
+        if (!breathing_rev) {
+            if (breathing_progress - 1 > 0) {
+                breathing_progress--;
+            } else if (breathing_progress == 0) {
+                breathing_rev = true;
+            } else {
+                breathing_progress = 0;
+            }
         } else {
-            breathing_progress = 0;
-        }
-    } else {
-        if (breathing_progress + 1 < 255) {
-            breathing_progress++;
-        } else if (breathing_progress == 255) {
-            breathing_rev = false;
-        } else {
-            breathing_progress = 255;
+            if (breathing_progress + 1 < 255) {
+                breathing_progress++;
+            } else if (breathing_progress == 255) {
+                breathing_rev = false;
+            } else {
+                breathing_progress = 255;
+            }
         }
     }
 }
