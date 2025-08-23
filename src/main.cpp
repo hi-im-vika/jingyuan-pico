@@ -23,6 +23,9 @@
 #define PRIMARY_SPEC_HUE 26
 #define SWEEP_FADE_BY 255
 
+#define BEATSIN_PHASE 128
+#define BEATSIN_INCREMENT 16
+
 #define WAVE_MAX 255
 #define WAVE_MIN 32
 
@@ -79,7 +82,8 @@ CRGB onboard[ONBOARD_LED_COUNT];
 // forward function declarations, from fastled demo
 void patt_solid();
 void patt_scroll();
-void patt_beatsin8();
+void patt_beatsin8_one();
+void patt_beatsin8_four();
 void patt_breathing();
 void patt_sound();
 void patt_rainbow();
@@ -92,7 +96,8 @@ typedef void (*pattern_list_t[])();
 pattern_list_t patterns = {
         patt_solid,
         patt_scroll,
-        patt_beatsin8,
+        patt_beatsin8_one,
+        patt_beatsin8_four,
         patt_breathing,
         patt_sound,
         patt_rainbow
@@ -234,12 +239,23 @@ void patt_scroll() {
     wave_offset--;
 }
 
-void patt_beatsin8() {
+void patt_beatsin8_one() {
     fadeToBlackBy(strip,LED_COUNT,1);
-    strip[beatsin8(13, 0, LED_COUNT, 0, 0)] = PRIMARY_HSV;
-    strip[beatsin8(13, 0, LED_COUNT, 0, 16)] = PRIMARY_HSV;
-    strip[beatsin8(13, 0, LED_COUNT, 0, 32)] = PRIMARY_HSV;
-    strip[beatsin8(13, 0, LED_COUNT, 0, 48)] = PRIMARY_HSV;
+    uint8_t beatsin_idx = beatsin8(13, 0, LED_COUNT, 0, BEATSIN_PHASE);
+    if(beatsin_idx < startup_idx) strip[beatsin_idx] = PRIMARY_HSV;
+}
+
+void patt_beatsin8_four() {
+    fadeToBlackBy(strip,LED_COUNT,1);
+    uint8_t beatsin_idx_1 = beatsin8(13, 0, LED_COUNT, 0, BEATSIN_PHASE + BEATSIN_INCREMENT * 0);
+    uint8_t beatsin_idx_2 = beatsin8(13, 0, LED_COUNT, 0, BEATSIN_PHASE + BEATSIN_INCREMENT * 1);
+    uint8_t beatsin_idx_3 = beatsin8(13, 0, LED_COUNT, 0, BEATSIN_PHASE + BEATSIN_INCREMENT * 2);
+    uint8_t beatsin_idx_4 = beatsin8(13, 0, LED_COUNT, 0, BEATSIN_PHASE + BEATSIN_INCREMENT * 3);
+
+    if(beatsin_idx_1 < startup_idx) strip[beatsin_idx_1] = PRIMARY_HSV;
+    if(beatsin_idx_2 < startup_idx) strip[beatsin_idx_2] = PRIMARY_HSV;
+    if(beatsin_idx_3 < startup_idx) strip[beatsin_idx_3] = PRIMARY_HSV;
+    if(beatsin_idx_4 < startup_idx) strip[beatsin_idx_4] = PRIMARY_HSV;
 }
 
 void patt_breathing() {
