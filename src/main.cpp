@@ -21,6 +21,8 @@
 #define FRAMES_PER_SECOND 120
 #define PRIMARY_HUE 29
 
+#define PATT_IDX_RAINBOW 5
+
 #define RAINBOW_UPDATE_TIME 10
 
 #define DEBOUNCE_DELAY 10
@@ -80,6 +82,7 @@ void patt_chase();
 void patt_breathing();
 void patt_sound();
 void patt_rainbow();
+void patt_startup();
 void next_pattern();
 void poll_button();
 
@@ -117,10 +120,12 @@ void loop() {
         onboard[0] = CRGB(0,1,0);
         poll_button();
 
-//        EVERY_N_MILLIS(fps_limit) {
+        if (do_startup) {
+            patt_startup();
+        } else {
             patterns[current_pattern_idx]();
-            FastLED.show();
-//        }
+        }
+        FastLED.show();
         yield();
     }
 
@@ -162,6 +167,21 @@ void poll_button() {
                 acted = false;
             }
         }
+    }
+}
+
+void patt_startup() {
+    switch (current_pattern_idx) {
+        case PATT_IDX_RAINBOW:
+            if (startup_brightness < 255) {
+                fl::fill_rainbow_circular(strip,LED_COUNT,rainbow_hue,false);
+                FastLED.setBrightness(++startup_brightness);
+            } else {
+                do_startup = false;
+            }
+            break;
+        default:
+            break;
     }
 }
 
