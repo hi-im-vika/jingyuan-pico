@@ -20,6 +20,7 @@
 
 #define FRAMES_PER_SECOND 120
 #define PRIMARY_HUE 29
+#define SWEEP_FADE_BY 255
 
 #define PATT_IDX_RAINBOW 5
 
@@ -54,7 +55,8 @@ int sound_lvl = 10;                                             // Current "damp
 int sound_min_lvl_avg = 0;                                              // For dynamic adjustment of graph low & high
 int sound_max_lvl_avg = 2048;
 
-uint8_t startup_next_led = 0;
+uint8_t sweep_idx = 0;
+uint8_t startup_idx = 0;
 bool do_startup = true;
 
 // debounce
@@ -114,6 +116,7 @@ void loop() {
         if (do_startup) {
             patt_startup();
         } else {
+            if (startup_idx < LED_COUNT) startup_idx++;
             patterns[current_pattern_idx]();
         }
         FastLED.show();
@@ -123,8 +126,9 @@ void loop() {
     // as soon as strip disconnects, do cleanup
     onboard[0] = CRGB(1,0,0);
     FastLED.show();
-    startup_brightness = 0;
+    startup_rainbow_brightness = 0;
     sweep_idx = 0;
+    startup_idx = 0;
     do_startup = true;
     sweep_state = UP;
 
@@ -169,38 +173,42 @@ void patt_startup() {
                     fadeToBlackBy(strip,LED_COUNT,SWEEP_FADE_BY);
                     strip[sweep_idx++] = CRGB::White;
                 } else {
+                    sweep_idx--;
                     sweep_state = DOWN;
                 }
                 break;
             case DOWN:
                 fadeToBlackBy(strip,LED_COUNT,SWEEP_FADE_BY);
-                if (sweep_idx - 1 < LED_COUNT) {
-                    strip[--sweep_idx] = CRGB::White;
-                } else {
+                if (sweep_idx - 1 > 0) {
+                    strip[sweep_idx--] = CRGB::White;
+                } else if (sweep_idx == 0) {
                     sweep_state = STOP;
+                } else {
+                    sweep_idx = 0;
+                    strip[sweep_idx] = CRGB::White;
                 }
                 break;
             default:
                 break;
         }
     } else {
-        switch (current_pattern_idx) {
-            case PATT_IDX_RAINBOW:
-                if (startup_brightness < 255) {
-                    fl::fill_rainbow_circular(strip,LED_COUNT,rainbow_hue,false);
-                    FastLED.setBrightness(++startup_brightness);
-                } else {
-                    do_startup = false;
-                }
-                break;
-            default:
-                break;
+        if (current_pattern_idx == PATT_IDX_RAINBOW) {
+            if (startup_rainbow_brightness < 255) {
+                fl::fill_rainbow_circular(strip,LED_COUNT,rainbow_hue,false);
+                FastLED.setBrightness(++startup_rainbow_brightness);
+            } else {
+                startup_idx = LED_COUNT;
+                do_startup = false;
+            }
+        } else {
+            fadeToBlackBy(strip,LED_COUNT,255);
+            do_startup = false;
         }
     }
 }
 
 void patt_solid() {
-    fill_solid(strip,LED_COUNT,CHSV(PRIMARY_HUE,255,255));
+    fill_solid(strip,startup_idx,CHSV(PRIMARY_HUE,255,255));
 }
 
 void patt_pulse() {
