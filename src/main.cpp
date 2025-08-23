@@ -94,7 +94,7 @@ CRGB strip[LED_COUNT];
 void update_anim_rainbow();
 void update_anim_pulse();
 void update_anim_breathing();
-void update_anim_chase();
+void update_anim_beatsin();
 void update_anim_sound();
 
 // helper function
@@ -242,7 +242,7 @@ void loop() {
                     update_anim_breathing();
                     break;
                 case CHASE:
-                    update_anim_chase();
+                    update_anim_beatsin();
                     break;
                 case SOUND:
                     update_anim_sound();
@@ -408,46 +408,51 @@ void update_anim_sound() {
 
 }
 
-void update_anim_chase() {
-    // chase pattern startup anim
-    // update startup animation LED count
-    if (pulse_next_led < LED_COUNT && (millis() - pulse_millis > frame_delay_2)) {
-        pulse_millis = millis();
-        pulse_next_led++;
-    }
-    // draw output of sine8() between 0 and LED_COUNT, change offset for next draw
-    memset(led_buffer, 0, sizeof(led_buffer));
-    if (chase_x_offset >= 0 && chase_x_offset < LED_COUNT) {
-        for (int i = 0; i < ANIM_KR_SIZE; i++) {
-            if (chase_x_offset - i >= 0) led_buffer[chase_x_offset - i] = 127;
-        }
-        led_buffer[chase_x_offset] = 255;
-        for (int i = 0; i < ANIM_KR_SIZE; i++) {
-            if (chase_x_offset + i <= LED_COUNT - 1) led_buffer[chase_x_offset + i] = 127;
-        }
-
-    }
-    for (int i = 0; i < pulse_next_led; i++) {
-        // queue changes to lighting
-        strip[i] = hsv2rgb_spectrum(CHSV(PRIMARY_HUE, 255, led_buffer[i]));
-    }
-    // update animation position
-    if (millis() - frame_millis > ANIM_CHASE_FRAME_TIME) {
-        frame_millis = millis();
-        if (chase_rev) {
-            if (chase_x_offset > (LED_COUNT - 2) - ANIM_KR_SIZE) {
-                chase_x_offset = (LED_COUNT - 1) - ANIM_KR_SIZE;
-                chase_rev = false;
-            } else {
-                chase_x_offset++;
-            }
-        } else {
-            if (chase_x_offset < 1 + ANIM_KR_SIZE) {
-                chase_x_offset = 1 + ANIM_KR_SIZE;
-                chase_rev = true;
-            } else {
-                --chase_x_offset;
-            }
-        }
-    }
+void update_anim_beatsin() {
+    uint8_t sin_beat = beatsin8(30, 0, LED_COUNT - 1, 0, 0);
+    strip[sin_beat] = CRGB::Blue;
+//    strip[beatsin8(30, 0, LED_COUNT - 1, 250, 0)] = CRGB::Red;
+//    strip[beatsin8(30, 0, LED_COUNT - 1, 500, 0)] = CRGB::Green;
+//    fadeToBlackBy(strip, LED_COUNT, 100);
+//    // chase pattern startup anim
+//    // update startup animation LED count
+//    if (pulse_next_led < LED_COUNT && (millis() - pulse_millis > frame_delay_2)) {
+//        pulse_millis = millis();
+//        pulse_next_led++;
+//    }
+//    // draw output of sine8() between 0 and LED_COUNT, change offset for next draw
+//    memset(led_buffer, 0, sizeof(led_buffer));
+//    if (chase_x_offset >= 0 && chase_x_offset < LED_COUNT) {
+//        for (int i = 0; i < ANIM_KR_SIZE; i++) {
+//            if (chase_x_offset - i >= 0) led_buffer[chase_x_offset - i] = 127;
+//        }
+//        led_buffer[chase_x_offset] = 255;
+//        for (int i = 0; i < ANIM_KR_SIZE; i++) {
+//            if (chase_x_offset + i <= LED_COUNT - 1) led_buffer[chase_x_offset + i] = 127;
+//        }
+//
+//    }
+//    for (int i = 0; i < pulse_next_led; i++) {
+//        // queue changes to lighting
+//        strip[i] = hsv2rgb_spectrum(CHSV(PRIMARY_HUE, 255, led_buffer[i]));
+//    }
+//    // update animation position
+//    if (millis() - frame_millis > ANIM_CHASE_FRAME_TIME) {
+//        frame_millis = millis();
+//        if (chase_rev) {
+//            if (chase_x_offset > (LED_COUNT - 2) - ANIM_KR_SIZE) {
+//                chase_x_offset = (LED_COUNT - 1) - ANIM_KR_SIZE;
+//                chase_rev = false;
+//            } else {
+//                chase_x_offset++;
+//            }
+//        } else {
+//            if (chase_x_offset < 1 + ANIM_KR_SIZE) {
+//                chase_x_offset = 1 + ANIM_KR_SIZE;
+//                chase_rev = true;
+//            } else {
+//                --chase_x_offset;
+//            }
+//        }
+//    }
 }
