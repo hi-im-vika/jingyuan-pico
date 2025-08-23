@@ -18,7 +18,6 @@
 #define MIC_PIN 26                  // mic pin for sound reactive fx
 #define ONBOARD_NEOPIXEL_PIN    16  // pin for onboard WS2812-2020 on RP2040-Zero
 
-#define FRAMES_PER_SECOND 120
 #define PRIMARY_HUE 29
 #define PRIMARY_SPEC_HUE 26
 #define SWEEP_FADE_BY 255
@@ -41,8 +40,9 @@
 #define SOUND_DC_OFFSET  0              // DC offset in mic signal - if unusure, leave 0
 #define SOUND_NOISE     30              // Noise/hum/interference in mic signal and increased value until it went quiet
 #define SOUND_SAMPLES   60              // Length of buffer for dynamic level adjustment
-#define SOUND_TOP (LED_COUNT + 2)       // Allow dot to go slightly off scale
-#define SOUND_PEAK_FALL 5               // Rate of sound_peak falling dot
+#define SOUND_TOP LED_COUNT       // Allow dot to go slightly off scale
+#define SOUND_PEAK_FALL 4               // Rate of sound_peak falling dot
+#define SOUND_PEAK_TIMEOUT 1000
 
 enum sweep_state_t {
     UP,
@@ -71,6 +71,7 @@ int sound_vol[SOUND_SAMPLES];                                              // Co
 int sound_lvl = 10;                                             // Current "dampened" audio level
 int sound_min_lvl_avg = 0;                                              // For dynamic adjustment of graph low & high
 int sound_max_lvl_avg = 2048;
+unsigned long peak_millis = 0;
 
 uint8_t sweep_idx = 0;
 uint8_t startup_idx = 0;
@@ -323,39 +324,51 @@ void patt_sound() {
 
     uint8_t i;
     uint16_t minLvl, maxLvl;
-    int n, height;
+    int measured, height;
 
-    n = analogRead(MIC_PIN);                                    // Raw reading from mic
-    n = abs(n - 2048 - SOUND_DC_OFFSET);                               // Center on zero
+    measured = analogRead(MIC_PIN);                                    // Raw reading from mic
+    measured = abs(measured - 2048 - SOUND_DC_OFFSET);                               // Center on zero
 
-    n = (n <= SOUND_NOISE) ? 0 : (n - SOUND_NOISE);                         // Remove noise/hum
-    sound_lvl = ((sound_lvl * 7) + n) >> 3;                                 // "Dampened" reading (else looks twitchy)
+    measured = (measured <= SOUND_NOISE) ? 0 : (measured - SOUND_NOISE);                         // Remove noise/hum
+    sound_lvl = ((sound_lvl * 7) + measured) >> 3;                                 // "Dampened" reading (else looks twitchy)
 
     // Calculate bar height based on dynamic min/max levels (fixed point):
     height = SOUND_TOP * (sound_lvl - sound_min_lvl_avg) / (long) (sound_max_lvl_avg - sound_min_lvl_avg);
 
     if (height < 0L) height = 0;                          // Clip output
     else if (height > SOUND_TOP) height = SOUND_TOP;
-    if (height > sound_peak) sound_peak = height;                     // Keep 'sound_peak' dot at top
-
+    if (height > sound_peak) {
+        sound_peak = height;                     // Keep 'sound_peak' dot at top
+        peak_millis = millis();
+    }
 
     // Color pixels based on rainbow gradient
     for (i = 0; i < LED_COUNT; i++) {
-        if (i >= height) strip[i].setRGB(0, 0, 0);
-        else strip[i] = CHSV(PRIMARY_HUE, 255, 255);
+        if (i < height) strip[i] = PRIMARY_HSV;
     }
+
+    fadeToBlackBy(strip,LED_COUNT,10);
+    // only fade measurement to black but not peak (WIP, not working)
+//    if ((sound_peak - 1) - 0 >= 1) {
+//        fadeToBlackBy(strip(0,sound_peak - 1),sound_peak - 1,10);
+//        if (sound_peak + 1 <= LED_COUNT - 1) {
+//            fadeToBlackBy(strip(sound_peak + 1, LED_COUNT - 1),(LED_COUNT) - (sound_peak + 1),255);
+//        }
+//    }
+//    fadeToBlackBy(strip(0,sound_peak-2),sound_peak - 2,10);
 
     // Draw sound_peak dot
-    if (sound_peak > 0 && sound_peak <= LED_COUNT - 1) strip[sound_peak] = CHSV(0, 0, 255);
+    if (sound_peak <= LED_COUNT - 1) strip[sound_peak] = CRGB::White;
 
-// Every few frames, make the sound_peak pixel drop by 1:
-
-    if (++sound_dot_count >= SOUND_PEAK_FALL) {                            // fall rate
-        if (sound_peak > 0) sound_peak--;
-        sound_dot_count = 0;
+    // after no peak for a while, Every few frames, make the sound_peak pixel drop by 1:
+    if (millis() - peak_millis > SOUND_PEAK_TIMEOUT) {
+        if (++sound_dot_count >= SOUND_PEAK_FALL) {                            // fall rate
+            if (sound_peak > 0) sound_peak--;
+            sound_dot_count = 0;
+        }
     }
 
-    sound_vol[sound_vol_count] = n;                                          // Save sample for dynamic leveling
+    sound_vol[sound_vol_count] = measured;                                          // Save sample for dynamic leveling
     if (++sound_vol_count >= SOUND_SAMPLES) sound_vol_count = 0;                    // Advance/rollover sample counter
 
     // Get volume range of prior frames
