@@ -176,8 +176,8 @@ void loop() {
                 FastLED.clear();
                 switch (startup) {
                     case UP:
-                        if (startup_next_led > (LED_COUNT - 1)) {
-                            startup_next_led--;
+                        if (startup_next_led >= LED_COUNT) {
+                            startup_next_led = LED_COUNT - 2;   // set next LED idx to second last in strip
                             startup = DOWN;
                         } else {
                             strip[startup_next_led++] = CRGB::White;
@@ -186,7 +186,7 @@ void loop() {
                         }
                         break;
                     case DOWN:
-                        if (!startup_next_led) {
+                        if (startup_next_led >= 255) {      // idx count overflowed, reached bottom of strip
                             switch (patt) {
                                 case RAINBOW:
                                     startup = RAINBOW_IN;
@@ -198,7 +198,7 @@ void loop() {
                                     break;
                             }
                         } else {
-                            strip[--startup_next_led] = CRGB::White;
+                            strip[startup_next_led--] = CRGB::White;
                             frame_millis = millis();
                             FastLED.show();
                         }
