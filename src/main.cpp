@@ -5,14 +5,16 @@
 #include <FastLED.h>
 #include <EEPROM.h>
 
+#define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
+
 #define LED_COUNT 142   // 200 strip
 //#define LED_COUNT 171 // 240 strip
 //#define LED_COUNT 32
 
-#define LED_PIN 5
-#define SENSE_PIN 6
-#define PATT_PIN 4
-#define MIC_PIN 26
+#define LED_PIN 5       // data pin for LED strip
+#define SENSE_PIN 6     // sense pin to detect if strip is connected
+#define PATT_PIN 4      // button pin to switch animations
+#define MIC_PIN 26      // mic pin for sound reactive fx
 
 #define PRIMARY_HUE 29
 
@@ -23,8 +25,6 @@
 #define SOUND_SAMPLES   60              // Length of buffer for dynamic level adjustment
 #define SOUND_TOP (LED_COUNT + 2)       // Allow dot to go slightly off scale
 #define SOUND_PEAK_FALL 5               // Rate of sound_peak falling dot
-
-#define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
 
 enum anim_state {
     DISCONNECTED,
