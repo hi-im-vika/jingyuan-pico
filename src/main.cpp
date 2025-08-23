@@ -43,8 +43,6 @@ enum sweep_state_t {
 // state machine
 sweep_state_t sweep_state = UP;
 unsigned long pressed_millis = 0;
-unsigned long frame_millis = 0;
-unsigned long pulse_millis = 0;
 
 // anims
 uint8_t rainbow_hue = 0;
@@ -63,11 +61,7 @@ bool do_startup = true;
 bool pressed = false;
 bool acted = false;
 
-uint16_t frame_delay = 10.0f;
-uint16_t frame_delay_rt = 10.0f;
-uint16_t frame_delay_2 = 10.0f;
-uint8_t startup_brightness = 0;
-const uint8_t fps_limit = 1000 / FRAMES_PER_SECOND;
+uint8_t startup_rainbow_brightness = 0;
 CRGB strip[LED_COUNT];
 CRGB onboard[ONBOARD_LED_COUNT];
 
