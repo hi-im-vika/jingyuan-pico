@@ -250,7 +250,9 @@ void patt_solid_glitter() {
 
 void patt_scroll() {
     for (int i = 0; i < LED_COUNT; i++) {
-        strip[i] = hsv2rgb_spectrum(CHSV(PRIMARY_SPEC_HUE,255, map(quadwave8(5 * i + wave_offset),0,255,WAVE_MIN,WAVE_MAX)));
+        if (i < startup_idx) {
+            strip[i] = hsv2rgb_spectrum(CHSV(PRIMARY_SPEC_HUE,255, map(quadwave8(5 * i + wave_offset),0,255,WAVE_MIN,WAVE_MAX)));
+        }
     }
     wave_offset--;
 }
