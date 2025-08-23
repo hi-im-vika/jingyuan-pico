@@ -31,9 +31,10 @@
 #define PATT_IDX_RAINBOW 7
 #define PATT_IDX_RAINBOW_DUAL 8
 
+#define SCROLL_UPDATE_TIME 9
 #define RAINBOW_UPDATE_TIME 10
 #define RAINBOW_DUAL_UPDATE_TIME 5
-#define fade_UPDATE_TIME 5
+#define FADE_UPDATE_TIME 5
 
 #define DEBOUNCE_DELAY 10
 
@@ -274,7 +275,7 @@ void patt_scroll() {
             strip[i] = hsv2rgb_spectrum(CHSV(PRIMARY_SPEC_HUE,255, map(quadwave8(5 * i + wave_offset),0,255,WAVE_MIN,WAVE_MAX)));
         }
     }
-    wave_offset--;
+    EVERY_N_MILLIS(SCROLL_UPDATE_TIME) wave_offset--;
 }
 
 void patt_beatsin8_one() {
@@ -298,7 +299,7 @@ void patt_beatsin8_four() {
 
 void patt_fade() {
     fill_solid(strip,startup_idx,hsv2rgb_spectrum(CHSV(PRIMARY_SPEC_HUE,255, ease8InOutQuad(fade_progress))));
-    EVERY_N_MILLIS(fade_UPDATE_TIME) {
+    EVERY_N_MILLIS(FADE_UPDATE_TIME) {
         if (!fade_rev) {
             if (fade_progress - 1 > 0) {
                 fade_progress--;
