@@ -34,7 +34,7 @@
 
 #define RAINBOW_UPDATE_TIME 10
 #define RAINBOW_DUAL_UPDATE_TIME 5
-#define BREATHING_UPDATE_TIME 5
+#define fade_UPDATE_TIME 5
 
 #define DEBOUNCE_DELAY 10
 
@@ -60,8 +60,8 @@ const CRGB PRIMARY_RGB = hsv2rgb_rainbow(PRIMARY_HSV);
 // anims
 uint8_t rainbow_hue = 0;
 uint8_t sound_peak = 0;                                              // Used for falling dot
-uint8_t breathing_progress = 255;
-bool breathing_rev = false;
+uint8_t fade_progress = 255;
+bool fade_rev = false;
 uint8_t wave_offset = 255;
 uint8_t confetti_hue = 0;
 
@@ -90,7 +90,7 @@ void patt_solid_glitter();
 void patt_scroll();
 void patt_beatsin8_one();
 void patt_beatsin8_four();
-void patt_breathing();
+void patt_fade();
 void patt_sound();
 void patt_rainbow();
 void patt_rainbow_dual();
@@ -108,7 +108,7 @@ pattern_list_t patterns = {
         patt_scroll,
         patt_beatsin8_one,
         patt_beatsin8_four,
-        patt_breathing,
+        patt_fade,
         patt_sound,
         patt_rainbow,
         patt_rainbow_dual,
@@ -121,7 +121,7 @@ uint8_t current_pattern_idx = 0;
 //}
 //
 //void loop1() {
-//    Serial.println(breathing_progress);
+//    Serial.println(fade_progress);
 //}
 
 void setup() {
@@ -295,24 +295,24 @@ void patt_beatsin8_four() {
     if(beatsin_idx_4 < startup_idx) strip[beatsin_idx_4] = PRIMARY_HSV;
 }
 
-void patt_breathing() {
-    fill_solid(strip,startup_idx,hsv2rgb_spectrum(CHSV(PRIMARY_SPEC_HUE,255, ease8InOutQuad(breathing_progress))));
-    EVERY_N_MILLIS(BREATHING_UPDATE_TIME) {
-        if (!breathing_rev) {
-            if (breathing_progress - 1 > 0) {
-                breathing_progress--;
-            } else if (breathing_progress == 0) {
-                breathing_rev = true;
+void patt_fade() {
+    fill_solid(strip,startup_idx,hsv2rgb_spectrum(CHSV(PRIMARY_SPEC_HUE,255, ease8InOutQuad(fade_progress))));
+    EVERY_N_MILLIS(fade_UPDATE_TIME) {
+        if (!fade_rev) {
+            if (fade_progress - 1 > 0) {
+                fade_progress--;
+            } else if (fade_progress == 0) {
+                fade_rev = true;
             } else {
-                breathing_progress = 0;
+                fade_progress = 0;
             }
         } else {
-            if (breathing_progress + 1 < 255) {
-                breathing_progress++;
-            } else if (breathing_progress == 255) {
-                breathing_rev = false;
+            if (fade_progress + 1 < 255) {
+                fade_progress++;
+            } else if (fade_progress == 255) {
+                fade_rev = false;
             } else {
-                breathing_progress = 255;
+                fade_progress = 255;
             }
         }
     }
