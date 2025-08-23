@@ -1,3 +1,6 @@
+// main.cpp
+// controller for an LED strip in a prop for a certain gacha game character's cosplay
+
 #include <Arduino.h>
 #include <FastLED.h>
 #include <EEPROM.h>
