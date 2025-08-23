@@ -77,7 +77,7 @@ int sound_lvl = 10;                                             // Current "damp
 int sound_min_lvl_avg = 0;                                              // For dynamic adjustment of graph low & high
 int sound_max_lvl_avg = 2048;
 
-int startup_next_led = 0;
+uint8_t startup_next_led = 0;
 bool do_startup = true;
 
 // debounce
@@ -87,7 +87,7 @@ bool acted = false;
 uint16_t frame_delay = 10.0f;
 uint16_t frame_delay_rt = 10.0f;
 uint16_t frame_delay_2 = 10.0f;
-byte startup_brightness = 0;
+uint8_t startup_brightness = 0;
 CRGB strip[LED_COUNT];
 //CRGB onboard[1];
 
