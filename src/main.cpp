@@ -21,6 +21,8 @@
 #define FRAMES_PER_SECOND 120
 #define PRIMARY_HUE 29
 
+#define RAINBOW_UPDATE_TIME 20
+
 #define DEBOUNCE_DELAY 10
 
 #define SOUND_DC_OFFSET  0              // DC offset in mic signal - if unusure, leave 0
@@ -47,6 +49,7 @@ unsigned long frame_millis = 0;
 unsigned long pulse_millis = 0;
 
 // anims
+uint8_t rainbow_hue = 0;
 uint8_t sound_peak = 0;                                              // Used for falling dot
 uint8_t sound_dot_count = 0;                                              // Frame counter for delaying dot-falling speed
 uint8_t sound_vol_count = 0;                                              // Frame counter for storing past volume data
@@ -236,5 +239,6 @@ void patt_sound() {
 }
 
 void patt_rainbow() {
-    fill_solid(strip,LED_COUNT,CHSV(50,255,255));
+    EVERY_N_MILLIS(RAINBOW_UPDATE_TIME) rainbow_hue++;
+    fl::fill_rainbow_circular(strip,LED_COUNT,rainbow_hue,true);
 }
