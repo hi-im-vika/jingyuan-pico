@@ -45,6 +45,8 @@ enum sweep_state_t {
 // state machine
 sweep_state_t sweep_state = UP;
 unsigned long pressed_millis = 0;
+const CHSV PRIMARY_HSV = CHSV(PRIMARY_HUE,255,255);
+const CRGB PRIMARY_RGB = hsv2rgb_rainbow(PRIMARY_HSV);
 
 // anims
 uint8_t rainbow_hue = 0;
