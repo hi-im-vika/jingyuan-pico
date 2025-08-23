@@ -95,6 +95,7 @@ pattern_list_t patterns = {
 uint8_t current_pattern_idx = 0;
 
 void setup() {
+//    Serial.begin(115200);
     analogReadResolution(12);
     pinMode(SENSE_PIN, INPUT_PULLUP);
     pinMode(PATT_PIN, INPUT_PULLUP);
