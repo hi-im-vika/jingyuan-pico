@@ -132,6 +132,7 @@ void loop() {
         patterns[current_pattern_idx]();
         FastLED.show();
         FastLED.delay(1000/120);
+        yield();
     }
 
     // as soon as strip disconnects
