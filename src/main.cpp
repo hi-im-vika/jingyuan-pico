@@ -194,7 +194,7 @@ void loop() {
                                 default:
                                     do_startup = false;
                                     pulse_next_led = 0;
-                                    memset(led_buffer, 0, LED_COUNT * sizeof(led_buffer[0]));
+                                    memset(led_buffer, 0, sizeof(led_buffer));
                                     break;
                             }
                         } else {
@@ -416,7 +416,7 @@ void update_anim_chase() {
         pulse_next_led++;
     }
     // draw output of sine8() between 0 and LED_COUNT, change offset for next draw
-    memset(led_buffer, 0, sizeof(uint8_t) * LED_COUNT);
+    memset(led_buffer, 0, sizeof(led_buffer));
     if (chase_x_offset >= 0 && chase_x_offset < LED_COUNT) {
         for (int i = 0; i < ANIM_KR_SIZE; i++) {
             if (chase_x_offset - i >= 0) led_buffer[chase_x_offset - i] = 127;
