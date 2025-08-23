@@ -113,10 +113,10 @@ void loop() {
         onboard[0] = CRGB(0,1,0);
         poll_button();
 
-        EVERY_N_MILLIS(fps_limit) {
+//        EVERY_N_MILLIS(fps_limit) {
             patterns[current_pattern_idx]();
             FastLED.show();
-        }
+//        }
         yield();
     }
 
