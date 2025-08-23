@@ -241,8 +241,5 @@ void patt_sound() {
 
 void patt_rainbow() {
     EVERY_N_MILLIS(RAINBOW_UPDATE_TIME) rainbow_hue--;
-    for (int i = 0; i < LED_COUNT; i++) {
-        strip[i] = hsv2rgb_spectrum(CHSV(map(i,0,LED_COUNT - 1,0,255) + rainbow_hue,255,255));
-    }
-//    fl::fill_rainbow_circular(strip,LED_COUNT,rainbow_hue,true);
+    fl::fill_rainbow_circular(strip,LED_COUNT,rainbow_hue,false);
 }
