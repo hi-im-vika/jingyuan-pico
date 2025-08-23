@@ -21,7 +21,7 @@
 #define FRAMES_PER_SECOND 120
 #define PRIMARY_HUE 29
 
-#define RAINBOW_UPDATE_TIME 20
+#define RAINBOW_UPDATE_TIME 10
 
 #define DEBOUNCE_DELAY 10
 
@@ -102,6 +102,7 @@ void setup() {
 //    pinMode(LED_BUILTIN, OUTPUT);     // only needed if using original pi pico board
     CFastLED::addLeds<NEOPIXEL, LED_PIN>(strip, LED_COUNT);
     CFastLED::addLeds<NEOPIXEL, ONBOARD_NEOPIXEL_PIN>(onboard, ONBOARD_LED_COUNT);
+    FastLED.setBrightness(255);
     FastLED.clear();
     FastLED.show();     // turn off all LEDs ASAP
     EEPROM.begin(1);    // read last chosen animation
@@ -239,6 +240,9 @@ void patt_sound() {
 }
 
 void patt_rainbow() {
-    EVERY_N_MILLIS(RAINBOW_UPDATE_TIME) rainbow_hue++;
-    fl::fill_rainbow_circular(strip,LED_COUNT,rainbow_hue,true);
+    EVERY_N_MILLIS(RAINBOW_UPDATE_TIME) rainbow_hue--;
+    for (int i = 0; i < LED_COUNT; i++) {
+        strip[i] = hsv2rgb_spectrum(CHSV(map(i,0,LED_COUNT - 1,0,255) + rainbow_hue,255,255));
+    }
+//    fl::fill_rainbow_circular(strip,LED_COUNT,rainbow_hue,true);
 }
