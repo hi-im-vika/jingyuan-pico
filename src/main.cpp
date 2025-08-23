@@ -30,6 +30,8 @@
 #define SOUND_TOP (LED_COUNT + 2)       // Allow dot to go slightly off scale
 #define SOUND_PEAK_FALL 5               // Rate of sound_peak falling dot
 
+#define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
+
 enum anim_state {
     DISCONNECTED,
     UP,
@@ -39,36 +41,15 @@ enum anim_state {
     STOP
 };
 
-enum anim_pattern {
-    SOLID,
-    PULSE,
-    CHASE,
-    BREATHING,
-    SOUND,
-    RAINBOW,
-    ANIM_COUNT
-};
-
 // globals
 // state machine
 anim_state state = DISCONNECTED;
 anim_state startup = UP;
-anim_pattern patt = SOLID;
 unsigned long pressed_millis = 0;
 unsigned long frame_millis = 0;
 unsigned long pulse_millis = 0;
 
 // anims
-uint8_t led_buffer[LED_COUNT] = {0};
-
-int16_t rainbow_fpx_hue = 65535;
-uint8_t pulse_x_offset = 255;
-uint8_t pulse_next_led = 0;
-int chase_x_offset = 0 + ANIM_KR_SIZE;
-bool chase_rev = true;
-int breathing_brightness = 255;
-bool breathing_rev = false;
-
 uint8_t sound_peak = 0;                                              // Used for falling dot
 uint8_t sound_dot_count = 0;                                              // Frame counter for delaying dot-falling speed
 uint8_t sound_vol_count = 0;                                              // Frame counter for storing past volume data
@@ -91,16 +72,26 @@ uint8_t startup_brightness = 0;
 CRGB strip[LED_COUNT];
 //CRGB onboard[1];
 
-void update_anim_rainbow();
-void update_anim_pulse();
-void update_anim_breathing();
-void update_anim_beatsin();
-void update_anim_sound();
+// forward function declarations, from fastled demo
+void patt_solid();
+void patt_pulse();
+void patt_chase();
+void patt_breathing();
+void patt_sound();
+void patt_rainbow();
+void next_pattern();
 
-// helper function
-int transition_time(int led_count, float seconds) {
-    return int(float((seconds / led_count) * 1000.0f));
-}
+// pattern list from fastled demo
+typedef void (*pattern_list_t[])();
+pattern_list_t patterns = {
+        patt_solid,
+        patt_pulse,
+        patt_chase,
+        patt_breathing,
+        patt_sound,
+        patt_rainbow
+};
+uint8_t current_pattern_idx = 0;
 
 void setup() {
     analogReadResolution(12);
@@ -109,13 +100,10 @@ void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
     CFastLED::addLeds<NEOPIXEL, LED_PIN>(strip, LED_COUNT);
     FastLED.clear();
-    FastLED.show();
-    EEPROM.begin(1);
-    patt = (anim_pattern) EEPROM.read(0);
-    if ((patt < 0) || (patt >= ANIM_COUNT)) patt = SOLID;
-    frame_delay = transition_time(LED_COUNT, 0.5f);
-    frame_delay_rt = transition_time(LED_COUNT * 2, 0.5f);
-    frame_delay_2 = transition_time(LED_COUNT, 0.25f);
+    FastLED.show();     // turn off all LEDs ASAP
+    EEPROM.begin(1);    // read last chosen animation
+    current_pattern_idx = EEPROM.read(0);
+    if ((current_pattern_idx < 0) || (current_pattern_idx >= ARRAY_SIZE(patterns))) current_pattern_idx = 0;
 }
 
 void loop() {
@@ -136,30 +124,9 @@ void loop() {
         if (pressed) {
             if (millis() - pressed_millis > DEBOUNCE_DELAY) {
                 if (digitalRead(PATT_PIN) == LOW && acted == false) {
-                    switch (patt) {
-                        case SOLID:
-                            patt = PULSE;
-                            break;
-                        case PULSE:
-                            patt = CHASE;
-                            break;
-                        case CHASE:
-                            patt = BREATHING;
-                            break;
-                        case BREATHING:
-                            patt = SOUND;
-                            break;
-                        case SOUND:
-                            patt = RAINBOW;
-                            break;
-                        case RAINBOW:
-                            patt = SOLID;
-                            break;
-                        default:
-                            break;
-                    }
+                    next_pattern();
                     acted = true;
-                    EEPROM.write(0, patt);
+                    EEPROM.write(0, current_pattern_idx);
                     EEPROM.commit();
                 } else if (digitalRead(PATT_PIN) == HIGH && acted == true) {
                     pressed = false;
@@ -168,104 +135,9 @@ void loop() {
             }
         }
 
-        // if strip was disconnected
-        if (do_startup) {
-            if (millis() - frame_millis > frame_delay ||
-                (startup == RAINBOW_IN && millis() - frame_millis > RAINBOW_FADE_FRAME_DELAY) ||
-                (startup == RAINBOW_OUT && millis() - frame_millis > RAINBOW_FADE_FRAME_DELAY)) {
-                FastLED.clear();
-                switch (startup) {
-                    case UP:
-                        if (startup_next_led >= LED_COUNT) {
-                            startup_next_led = LED_COUNT - 2;   // set next LED idx to second last in strip
-                            startup = DOWN;
-                        } else {
-                            strip[startup_next_led++] = CRGB::White;
-                            frame_millis = millis();
-                            FastLED.show();
-                        }
-                        break;
-                    case DOWN:
-                        if (startup_next_led >= 255) {      // idx count overflowed, reached bottom of strip
-                            switch (patt) {
-                                case RAINBOW:
-                                    startup = RAINBOW_IN;
-                                    break;
-                                default:
-                                    do_startup = false;
-                                    pulse_next_led = 0;
-                                    memset(led_buffer, 0, sizeof(led_buffer));
-                                    break;
-                            }
-                        } else {
-                            strip[startup_next_led--] = CRGB::White;
-                            frame_millis = millis();
-                            FastLED.show();
-                        }
-                        break;
-                    case RAINBOW_IN:
-                        if (startup_brightness < 255) {
-                            fl::fill_rainbow_circular(strip, LED_COUNT, rainbow_fpx_hue);
-                            FastLED.setBrightness(ease8InOutCubic(++startup_brightness));
-                            frame_millis = millis();
-                            FastLED.show();
-                        } else {
-                            do_startup = false;
-                            // startup = RAINBOW_OUT;
-                        }
-                        break;
-                    case RAINBOW_OUT:
-                        if (startup_brightness > 0) {
-                            fl::fill_rainbow_circular(strip, LED_COUNT, rainbow_fpx_hue);
-                            FastLED.setBrightness(ease8InOutCubic(--startup_brightness));
-                            frame_millis = millis();
-                            FastLED.show();
-                        } else {
-                            do_startup = false;
-                        }
-                        break;
-                    default:
-                        break;
-                }
-            }
-        } else {
-            // otherwise, do normal anims
-            FastLED.clear();
-            switch (patt) {
-                case RAINBOW:
-                    update_anim_rainbow();
-                    break;
-                case PULSE:
-                    update_anim_pulse();
-                    break;
-                case BREATHING:
-                    update_anim_breathing();
-                    break;
-                case CHASE:
-                    update_anim_beatsin();
-                    break;
-                case SOUND:
-                    update_anim_sound();
-                    break;
-                case SOLID:
-                    // solid pattern startup anim
-                    // update startup animation LED count
-                    if (pulse_next_led < LED_COUNT && (millis() - pulse_millis > frame_delay_2)) {
-                        pulse_millis = millis();
-                        pulse_next_led++;
-                    }
-                    // only fill LEDs when pulse_next_led > 0, since 0 fills all LEDs
-
-                    if (pulse_next_led) {
-                        fl::fill_solid(strip, pulse_next_led, hsv2rgb_spectrum(CHSV(PRIMARY_HUE, 255, 255)));
-                    }
-                    break;
-                default:
-                    break;
-            }
-            FastLED.show();
-            yield();
-        }
+        patterns[current_pattern_idx]();
+        FastLED.show();
+        FastLED.delay(1000/120);
     }
 
     // as soon as strip disconnects
@@ -279,79 +151,28 @@ void loop() {
     yield();
 }
 
-void update_anim_rainbow() {
-    fl::fill_rainbow_circular(strip, LED_COUNT, rainbow_fpx_hue);
-    // update animation position
-    if (millis() - frame_millis > ANIM_RAINBOW_FRAME_TIME) {
-        frame_millis = millis();
-        // scale rainbow anim cycle to 255 steps, meaning to go around
-        // the entire hue circle in 255 steps, each step is 257 wide
-        // whole animation will take 255 * ANIM_RAINBOW_FRAME_TIME ms
-        rainbow_fpx_hue = rainbow_fpx_hue - 1 > 255 ? 255 : rainbow_fpx_hue - 1;
-    }
+void next_pattern() {
+    current_pattern_idx = (current_pattern_idx + 1) % ARRAY_SIZE(patterns);
 }
 
-void update_anim_pulse() {
-    // chase pattern startup anim
-    // update startup animation LED count
-    if (pulse_next_led < LED_COUNT && (millis() - pulse_millis > frame_delay_2)) {
-        pulse_millis = millis();
-        pulse_next_led++;
-    }
-    // draw output of sine8() between 0 and LED_COUNT, change offset for next draw
-    for (int i = 0; i < pulse_next_led; i++) {
-        // restrict brightness range between 32 and 255
-        float scale = (255 - PULSE_Y_OFFSET) / 255.0;
-        led_buffer[i] = scale * cubicwave8((5 * i) + pulse_x_offset) + PULSE_Y_OFFSET;
-        // queue changes to lighting
-        strip[i] = hsv2rgb_spectrum(CHSV(PRIMARY_HUE, 255, led_buffer[i]));
-    }
-    // update animation position
-    if (millis() - frame_millis > ANIM_PULSE_FRAME_TIME) {
-        frame_millis = millis();
-        // chase anim has 255 steps, sine8() between 32 and 255 is spread across
-        // 255 steps, whole animation will take 255 * ANIM_PULSE_FRAME_TIME ms
-        pulse_x_offset--;
-    }
+void patt_solid() {
+    fill_solid(strip,LED_COUNT,CHSV(10,255,255));
 }
 
-void update_anim_breathing() {
-    // chase pattern startup anim
-    // update startup animation LED count
-    if (pulse_next_led < LED_COUNT && (millis() - pulse_millis > frame_delay_2)) {
-        pulse_millis = millis();
-        pulse_next_led++;
-    }
-    // draw output of sine8() between 0 and LED_COUNT, change offset for next draw
-    for (int i = 0; i < pulse_next_led; i++) {
-        fl::fill_solid(strip, pulse_next_led, hsv2rgb_spectrum(CHSV(PRIMARY_HUE, 255, breathing_brightness)));
-//                        if (breathing_brightness >= 0 && breathing_brightness < 254) {
-//                            strip.setPixelColor(i, Adafruit_NeoPixel::ColorHSV(5461, 255, 200));
-//                        }
-    }
-    // update animation position
-    if (millis() - frame_millis > ANIM_BREATHING_TIME) {
-        frame_millis = millis();
-        if (breathing_rev) {
-            if (breathing_brightness > 254) {
-                breathing_brightness--;
-                breathing_rev = false;
-            } else {
-                breathing_brightness++;
-            }
-        } else {
-            if (breathing_brightness < 1) {
-                breathing_brightness = 0;
-                breathing_rev = true;
-            } else {
-                --breathing_brightness;
-            }
-        }
-    }
+void patt_pulse() {
+    fill_solid(strip,LED_COUNT,CHSV(20,255,255));
+}
+
+void patt_chase() {
+    fill_solid(strip,LED_COUNT,CHSV(30,255,255));
+}
+
+void patt_breathing() {
+    fill_solid(strip,LED_COUNT,CHSV(40,255,255));
 }
 
 // based on neopixel sound reactive pendant and https://github.com/atuline/FastLED-SoundReactive
-void update_anim_sound() {
+void patt_sound() {
 
     uint8_t i;
     uint16_t minLvl, maxLvl;
@@ -408,51 +229,6 @@ void update_anim_sound() {
 
 }
 
-void update_anim_beatsin() {
-    uint8_t sin_beat = beatsin8(30, 0, LED_COUNT - 1, 0, 0);
-    strip[sin_beat] = CRGB::Blue;
-//    strip[beatsin8(30, 0, LED_COUNT - 1, 250, 0)] = CRGB::Red;
-//    strip[beatsin8(30, 0, LED_COUNT - 1, 500, 0)] = CRGB::Green;
-//    fadeToBlackBy(strip, LED_COUNT, 100);
-//    // chase pattern startup anim
-//    // update startup animation LED count
-//    if (pulse_next_led < LED_COUNT && (millis() - pulse_millis > frame_delay_2)) {
-//        pulse_millis = millis();
-//        pulse_next_led++;
-//    }
-//    // draw output of sine8() between 0 and LED_COUNT, change offset for next draw
-//    memset(led_buffer, 0, sizeof(led_buffer));
-//    if (chase_x_offset >= 0 && chase_x_offset < LED_COUNT) {
-//        for (int i = 0; i < ANIM_KR_SIZE; i++) {
-//            if (chase_x_offset - i >= 0) led_buffer[chase_x_offset - i] = 127;
-//        }
-//        led_buffer[chase_x_offset] = 255;
-//        for (int i = 0; i < ANIM_KR_SIZE; i++) {
-//            if (chase_x_offset + i <= LED_COUNT - 1) led_buffer[chase_x_offset + i] = 127;
-//        }
-//
-//    }
-//    for (int i = 0; i < pulse_next_led; i++) {
-//        // queue changes to lighting
-//        strip[i] = hsv2rgb_spectrum(CHSV(PRIMARY_HUE, 255, led_buffer[i]));
-//    }
-//    // update animation position
-//    if (millis() - frame_millis > ANIM_CHASE_FRAME_TIME) {
-//        frame_millis = millis();
-//        if (chase_rev) {
-//            if (chase_x_offset > (LED_COUNT - 2) - ANIM_KR_SIZE) {
-//                chase_x_offset = (LED_COUNT - 1) - ANIM_KR_SIZE;
-//                chase_rev = false;
-//            } else {
-//                chase_x_offset++;
-//            }
-//        } else {
-//            if (chase_x_offset < 1 + ANIM_KR_SIZE) {
-//                chase_x_offset = 1 + ANIM_KR_SIZE;
-//                chase_rev = true;
-//            } else {
-//                --chase_x_offset;
-//            }
-//        }
-//    }
+void patt_rainbow() {
+    fill_solid(strip,LED_COUNT,CHSV(50,255,255));
 }
