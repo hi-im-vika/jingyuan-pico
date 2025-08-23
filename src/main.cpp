@@ -69,7 +69,7 @@ CRGB onboard[ONBOARD_LED_COUNT];
 
 // forward function declarations, from fastled demo
 void patt_solid();
-void patt_pulse();
+void patt_wave();
 void patt_chase();
 void patt_breathing();
 void patt_sound();
@@ -82,7 +82,7 @@ void poll_button();
 typedef void (*pattern_list_t[])();
 pattern_list_t patterns = {
         patt_solid,
-        patt_pulse,
+        patt_wave,
         patt_chase,
         patt_breathing,
         patt_sound,
@@ -211,7 +211,7 @@ void patt_solid() {
     fill_solid(strip,startup_idx,CHSV(PRIMARY_HUE,255,255));
 }
 
-void patt_pulse() {
+void patt_wave() {
     fill_solid(strip,LED_COUNT,CHSV(20,255,255));
 }
 
