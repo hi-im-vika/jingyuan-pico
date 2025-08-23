@@ -28,10 +28,12 @@
 #define WAVE_MAX 255
 #define WAVE_MIN 32
 
-#define PATT_IDX_RAINBOW 7
-#define PATT_IDX_RAINBOW_DUAL 8
+#define PATT_IDX_RAINBOW 8
+#define PATT_IDX_RAINBOW_DUAL (PATT_IDX_RAINBOW + 1)
 
 #define SCROLL_UPDATE_TIME 9
+#define KNIGHTRIDER_UPDATE_TIME 5
+#define KNIGHTRIDER_WIDTH 20
 #define RAINBOW_UPDATE_TIME 10
 #define RAINBOW_DUAL_UPDATE_TIME 5
 #define FADE_UPDATE_TIME 5
@@ -60,12 +62,14 @@ const CRGB PRIMARY_RGB = hsv2rgb_rainbow(PRIMARY_HSV);
 
 // anims
 uint8_t rainbow_hue = 0;
-uint8_t sound_peak = 0;                                              // Used for falling dot
+uint8_t knightrider_idx = 0;
+bool knightrider_rev = false;
 uint8_t fade_progress = 255;
 bool fade_rev = false;
 uint8_t wave_offset = 255;
 uint8_t confetti_hue = 0;
 
+uint8_t sound_peak = 0;                                              // Used for falling dot
 uint8_t sound_dot_count = 0;                                              // Frame counter for delaying dot-falling speed
 uint8_t sound_vol_count = 0;                                              // Frame counter for storing past volume data
 int sound_vol[SOUND_SAMPLES];                                              // Collection of prior volume samples
@@ -90,6 +94,7 @@ CRGB onboard[ONBOARD_LED_COUNT];
 void patt_solid();
 void patt_solid_glitter();
 void patt_scroll();
+void patt_knightrider();
 void patt_beatsin8_one();
 void patt_beatsin8_four();
 void patt_fade();
@@ -108,6 +113,7 @@ pattern_list_t patterns = {
         patt_solid,
         patt_solid_glitter,
         patt_scroll,
+        patt_knightrider,
         patt_beatsin8_one,
         patt_beatsin8_four,
         patt_fade,
@@ -276,6 +282,34 @@ void patt_scroll() {
         }
     }
     EVERY_N_MILLIS(SCROLL_UPDATE_TIME) wave_offset--;
+}
+
+void patt_knightrider() {
+    fadeToBlackBy(strip,LED_COUNT,255);
+    if (startup_idx < KNIGHTRIDER_WIDTH) {
+        fl::fill_solid(strip(0, startup_idx), startup_idx, PRIMARY_HSV);
+    } else {
+        fl::fill_solid(strip(knightrider_idx, knightrider_idx + KNIGHTRIDER_WIDTH + 1), KNIGHTRIDER_WIDTH, PRIMARY_HSV);
+    }
+    EVERY_N_MILLIS(KNIGHTRIDER_UPDATE_TIME) {
+        if (knightrider_rev) {
+            if (knightrider_idx - 1 > 0) {
+                knightrider_idx--;
+            } else if (knightrider_idx == 0) {
+                knightrider_rev = false;
+            } else {
+                knightrider_idx = 0;
+            }
+        } else {
+            if (knightrider_idx + 1 + KNIGHTRIDER_WIDTH < LED_COUNT) {
+                knightrider_idx++;
+            } else if (knightrider_idx == LED_COUNT - KNIGHTRIDER_WIDTH) {
+                knightrider_rev = true;
+            } else {
+                knightrider_idx = LED_COUNT - KNIGHTRIDER_WIDTH;
+            }
+        }
+    }
 }
 
 void patt_beatsin8_one() {
