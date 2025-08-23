@@ -18,6 +18,7 @@
 #define MIC_PIN 26                  // mic pin for sound reactive fx
 #define ONBOARD_NEOPIXEL_PIN    16  // pin for onboard WS2812-2020 on RP2040-Zero
 
+#define FRAMES_PER_SECOND 120
 #define PRIMARY_HUE 29
 
 #define DEBOUNCE_DELAY 10
@@ -65,6 +66,7 @@ uint16_t frame_delay = 10.0f;
 uint16_t frame_delay_rt = 10.0f;
 uint16_t frame_delay_2 = 10.0f;
 uint8_t startup_brightness = 0;
+const uint8_t fps_limit = 1000 / FRAMES_PER_SECOND;
 CRGB strip[LED_COUNT];
 CRGB onboard[ONBOARD_LED_COUNT];
 
@@ -76,6 +78,7 @@ void patt_breathing();
 void patt_sound();
 void patt_rainbow();
 void next_pattern();
+void poll_button();
 
 // pattern list from fastled demo
 typedef void (*pattern_list_t[])();
@@ -108,30 +111,12 @@ void loop() {
     while (digitalRead(SENSE_PIN) == LOW) {
         // turn on debug led when strip connected
         onboard[0] = CRGB(0,1,0);
+        poll_button();
 
-        // debounce tomfoolery
-        if (digitalRead(PATT_PIN) == LOW && !pressed) {
-            pressed = true;
-            pressed_millis = millis();
+        EVERY_N_MILLIS(fps_limit) {
+            patterns[current_pattern_idx]();
+            FastLED.show();
         }
-
-        // switch anim
-        if (pressed) {
-            if (millis() - pressed_millis > DEBOUNCE_DELAY) {
-                if (digitalRead(PATT_PIN) == LOW && !acted) {
-                    next_pattern();
-                    acted = true;
-                    EEPROM.write(0, current_pattern_idx);
-                    EEPROM.commit();
-                } else if (digitalRead(PATT_PIN) == HIGH && acted) {
-                    pressed = false;
-                    acted = false;
-                }
-            }
-        }
-        patterns[current_pattern_idx]();
-        FastLED.show();
-        FastLED.delay(1000/120);
         yield();
     }
 
@@ -147,6 +132,29 @@ void loop() {
 
 void next_pattern() {
     current_pattern_idx = (current_pattern_idx + 1) % ARRAY_SIZE(patterns);
+}
+
+void poll_button() {
+    // debounce tomfoolery
+    if (digitalRead(PATT_PIN) == LOW && !pressed) {
+        pressed = true;
+        pressed_millis = millis();
+    }
+
+    // switch anim
+    if (pressed) {
+        if (millis() - pressed_millis > DEBOUNCE_DELAY) {
+            if (digitalRead(PATT_PIN) == LOW && !acted) {
+                next_pattern();
+                acted = true;
+                EEPROM.write(0, current_pattern_idx);
+                EEPROM.commit();
+            } else if (digitalRead(PATT_PIN) == HIGH && acted) {
+                pressed = false;
+                acted = false;
+            }
+        }
+    }
 }
 
 void patt_solid() {
