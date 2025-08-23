@@ -17,15 +17,6 @@
 #define PRIMARY_HUE 29
 
 #define DEBOUNCE_DELAY 10
-#define PULSE_Y_OFFSET 32
-#define CHASE_Y_OFFSET 16
-#define RAINBOW_FADE_FRAME_DELAY 1
-#define ANIM_RAINBOW_FRAME_TIME 10
-#define ANIM_PULSE_FRAME_TIME 10
-#define ANIM_CHASE_FRAME_TIME 5
-#define ANIM_SOUND_FRAME_TIME 5
-#define ANIM_BREATHING_TIME 5
-#define ANIM_KR_SIZE 10
 
 #define SOUND_DC_OFFSET  0              // DC offset in mic signal - if unusure, leave 0
 #define SOUND_NOISE     30              // Noise/hum/interference in mic signal and increased value until it went quiet
