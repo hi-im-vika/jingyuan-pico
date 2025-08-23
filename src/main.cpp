@@ -131,7 +131,7 @@ void loop() {
     // as soon as strip disconnects, do cleanup
     onboard[0] = CRGB(1,0,0);
     FastLED.show();
-    startup_rainbow_brightness = 0;
+    if (current_pattern_idx == PATT_IDX_RAINBOW) startup_rainbow_brightness = 0;
     sweep_idx = 0;
     startup_idx = 0;
     do_startup = true;
