@@ -7,16 +7,17 @@
 
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
 
-#define LED_COUNT 142   // 200 strip
-//#define LED_COUNT 171 // 240 strip
+// #define LED_COUNT 142   // 200 strip
+#define LED_COUNT 171 // 240 strip
 //#define LED_COUNT 32
 #define ONBOARD_LED_COUNT 1
 
-#define LED_PIN 5                   // data pin for LED strip
-#define SENSE_PIN 6                 // sense pin to detect if strip is connected
-#define PATT_PIN 4                  // button pin to switch animations
+#define LED_PIN 24                   // data pin for LED strip
+#define SENSE_PIN 25                 // sense pin to detect if strip is connected
+#define PATT_PIN 17                 // button pin to switch animations
 #define MIC_PIN 26                  // mic pin for sound reactive fx
-#define ONBOARD_NEOPIXEL_PIN    16  // pin for onboard WS2812-2020 on RP2040-Zero
+// #define ONBOARD_NEOPIXEL_PIN    16  // pin for onboard WS2812-2020 on RP2040-Zero
+#define STRIP_CONN_PIN 5
 
 #define PRIMARY_HUE 29
 #define PRIMARY_SPEC_HUE 26
@@ -136,9 +137,10 @@ void setup() {
     analogReadResolution(12);
     pinMode(SENSE_PIN, INPUT_PULLUP);
     pinMode(PATT_PIN, INPUT_PULLUP);
+    pinMode(STRIP_CONN_PIN, OUTPUT);
 //    pinMode(LED_BUILTIN, OUTPUT);     // only needed if using original pi pico board
     CFastLED::addLeds<NEOPIXEL, LED_PIN>(strip, LED_COUNT);
-    CFastLED::addLeds<NEOPIXEL, ONBOARD_NEOPIXEL_PIN>(onboard, ONBOARD_LED_COUNT);
+    // CFastLED::addLeds<NEOPIXEL, ONBOARD_NEOPIXEL_PIN>(onboard, ONBOARD_LED_COUNT);
     FastLED.setBrightness(255);
     FastLED.clear();
     FastLED.show();     // turn off all LEDs ASAP
@@ -151,7 +153,8 @@ void loop() {
     // while strip is connected
     while (digitalRead(SENSE_PIN) == LOW) {
         // turn on debug led when strip connected
-        onboard[0] = CRGB(0,1,0);
+        // onboard[0] = CRGB(0,1,0);
+        digitalWrite(STRIP_CONN_PIN, HIGH);
         poll_button();
 
         if (do_startup) {
@@ -165,7 +168,8 @@ void loop() {
     }
 
     // as soon as strip disconnects, do cleanup
-    onboard[0] = CRGB(1,0,0);
+    // onboard[0] = CRGB(1,0,0);
+    digitalWrite(STRIP_CONN_PIN, LOW);
     FastLED.show();
     if ((current_pattern_idx == PATT_IDX_RAINBOW) || (current_pattern_idx == (PATT_IDX_RAINBOW_DUAL))) {
         startup_rainbow_brightness = 0;
