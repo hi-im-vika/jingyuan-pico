@@ -7,8 +7,8 @@
 
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
 
-// #define LED_COUNT 142   // 200 strip
-#define LED_COUNT 171 // 240 strip
+#define LED_COUNT 142   // 200 strip
+// #define LED_COUNT 171 // 240 strip
 //#define LED_COUNT 32
 #define ONBOARD_LED_COUNT 1
 
