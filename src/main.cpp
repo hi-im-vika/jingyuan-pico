@@ -87,6 +87,8 @@ uint8_t sweep_idx = 0;
 uint8_t startup_idx = 0;
 bool do_startup = true;
 
+int global_brightness = 255;
+
 // debounce
 bool pressed = false;
 bool acted = false;
