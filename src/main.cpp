@@ -169,6 +169,7 @@ void loop() {
             if (startup_idx < LED_COUNT) startup_idx++;
             patterns[current_pattern_idx]();
         }
+        FastLED.setBrightness(global_brightness);
         FastLED.show();
         yield();
     }
