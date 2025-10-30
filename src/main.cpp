@@ -248,7 +248,7 @@ void patt_startup() {
     } else {
         switch (current_pattern_idx) {
             case PATT_IDX_RAINBOW:
-                if (startup_rainbow_brightness < 255) {
+                if (startup_rainbow_brightness < global_brightness) {
                     fl::fill_rainbow_circular(strip,LED_COUNT,rainbow_hue,false);
                     FastLED.setBrightness(++startup_rainbow_brightness);
                 } else {
@@ -257,7 +257,7 @@ void patt_startup() {
                 }
                 break;
             case (PATT_IDX_RAINBOW_DUAL):
-                if (startup_rainbow_brightness < 255) {
+                if (startup_rainbow_brightness < global_brightness) {
                     fl::fill_rainbow_circular(strip(0,LED_COUNT/2),LED_COUNT/2,rainbow_hue,true);
                     fl::fill_rainbow_circular(strip(LED_COUNT/2 + 1, LED_COUNT),LED_COUNT/2,rainbow_hue,false);
                     FastLED.setBrightness(++startup_rainbow_brightness);
@@ -267,7 +267,7 @@ void patt_startup() {
                 }
                 break;
             default:
-                fadeToBlackBy(strip,LED_COUNT,255);
+                fadeToBlackBy(strip,LED_COUNT,global_brightness);
                 do_startup = false;
                 break;
         }
