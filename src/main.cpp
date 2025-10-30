@@ -18,6 +18,10 @@
 #define MIC_PIN 26                  // mic pin for sound reactive fx
 // #define ONBOARD_NEOPIXEL_PIN    16  // pin for onboard WS2812-2020 on RP2040-Zero
 #define STRIP_CONN_PIN 5
+#define BRIGHTUP_PIN 16
+#define BRIGHTDN_PIN 20
+#define PATTNEXT_PIN 18
+#define PATTPREV_PIN 19
 
 #define PRIMARY_HUE 29
 #define PRIMARY_SPEC_HUE 26
