@@ -143,6 +143,8 @@ void setup() {
     analogReadResolution(12);
     pinMode(SENSE_PIN, INPUT_PULLUP);
     pinMode(PATT_PIN, INPUT_PULLUP);
+    pinMode(BRIGHTUP_PIN, INPUT_PULLUP);
+    pinMode(BRIGHTDN_PIN, INPUT_PULLUP);
     pinMode(STRIP_CONN_PIN, OUTPUT);
 //    pinMode(LED_BUILTIN, OUTPUT);     // only needed if using original pi pico board
     CFastLED::addLeds<NEOPIXEL, LED_PIN>(strip, LED_COUNT);
