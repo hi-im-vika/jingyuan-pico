@@ -211,21 +211,27 @@ void poll_button() {
     pressed_millis = millis();
   }
 
-    // switch anim
-    if (pressed) {
-      if (millis() - pressed_millis > DEBOUNCE_DELAY) {
-        if (digitalRead(PATT_PIN) == LOW && !acted) {
-          next_pattern();
-          acted = true;
-          EEPROM.write(0, current_pattern_idx);
-          EEPROM.commit();
-        } else if (digitalRead(PATT_PIN) == HIGH && acted) {
-          pressed = false;
-          acted = false;
-        }
+  // switch anim
+  if (pressed) {
+    if (millis() - pressed_millis > DEBOUNCE_DELAY) {
+      if (digitalRead(PATT_PIN) == LOW && !acted_patt) {
+        next_pattern();
+        acted_patt = true;
+        EEPROM.write(0, current_pattern_idx);
+        EEPROM.commit();
+      } else if (digitalRead(PATT_PIN) == HIGH && acted_patt) {
+        pressed = false;
+        acted_patt = false;
+      } else if (digitalRead(BRIGHTDN_PIN) == LOW && !acted_brightdn) {
+        global_brightness -= 32;
+        acted_brightdn = true;
+      } else if (digitalRead(BRIGHTDN_PIN) == HIGH && acted_brightdn) {
+        pressed = false;
+        acted_brightdn = false;
       }
     }
   }
+}
 
   void patt_startup() {
     if (sweep_state != STOP) {
