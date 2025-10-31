@@ -200,12 +200,16 @@ void loop() {
     current_pattern_idx = (current_pattern_idx + 1) % ARRAY_SIZE(patterns);
   }
 
-  void poll_button() {
-    // debounce tomfoolery
-    if (digitalRead(PATT_PIN) == LOW && !pressed) {
-      pressed = true;
-      pressed_millis = millis();
-    }
+void poll_button() {
+  // debounce tomfoolery
+  bool any_button_pressed =
+      digitalRead(BRIGHTUP_PIN) == LOW || digitalRead(BRIGHTDN_PIN) == LOW ||
+      digitalRead(PATTNEXT_PIN) == LOW || digitalRead(PATTPREV_PIN) == LOW ||
+      digitalRead(PATT_PIN) == LOW;
+  if (any_button_pressed && !pressed) {
+    pressed = true;
+    pressed_millis = millis();
+  }
 
     // switch anim
     if (pressed) {
