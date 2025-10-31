@@ -56,6 +56,8 @@
 #define SOUND_PEAK_FALL 4   // Rate of sound_peak falling dot
 #define SOUND_PEAK_TIMEOUT 1000
 
+#define BRIGHT_STEP 16
+
 enum sweep_state_t { UP, DOWN, STOP };
 
 // globals
@@ -222,8 +224,8 @@ void poll_button() {
         pressed = false;
         acted_patt = false;
       } else if (digitalRead(BRIGHTDN_PIN) == LOW && !acted_brightdn) {
-        if (global_brightness - 32 >= 0) {
-          global_brightness -= 32;
+        if (global_brightness - BRIGHT_STEP >= 0) {
+          global_brightness -= BRIGHT_STEP;
         } else {
           global_brightness = 0;
         }
