@@ -153,9 +153,13 @@ void setup() {
   FastLED.show();  // turn off all LEDs ASAP
   EEPROM.begin(1); // read last chosen animation
   current_pattern_idx = EEPROM.read(0);
+  global_brightness = EEPROM.read(1);
   if ((current_pattern_idx < 0) ||
       (current_pattern_idx >= ARRAY_SIZE(patterns)))
     current_pattern_idx = 0;
+  if ((global_brightness < 0) || (global_brightness > 255)) {
+    global_brightness = 255;
+  }
 }
 
 void loop() {
@@ -229,6 +233,8 @@ void poll_button() {
         } else {
           global_brightness = 0;
         }
+        EEPROM.write(1, global_brightness);
+        EEPROM.commit();
         acted_brightdn = true;
       } else if (digitalRead(BRIGHTDN_PIN) == HIGH && acted_brightdn) {
         pressed = false;
@@ -239,6 +245,8 @@ void poll_button() {
         } else {
           global_brightness = 255;
         }
+        EEPROM.write(1, global_brightness);
+        EEPROM.commit();
         acted_brightup = true;
       } else if (digitalRead(BRIGHTUP_PIN) == HIGH && acted_brightup) {
         pressed = false;
