@@ -183,12 +183,11 @@ void loop() {
   if ((current_pattern_idx == PATT_IDX_RAINBOW) ||
       (current_pattern_idx == (PATT_IDX_RAINBOW_DUAL))) {
     startup_rainbow_brightness = 0;
-      }
+  }
   sweep_idx = 0;
   startup_idx = 0;
   do_startup = true;
   sweep_state = UP;
-
 
   // let microcontroller do its own thing in the meantime
   while (digitalRead(SENSE_PIN) == HIGH) {
@@ -196,9 +195,9 @@ void loop() {
   }
 }
 
-  void next_pattern() {
-    current_pattern_idx = (current_pattern_idx + 1) % ARRAY_SIZE(patterns);
-  }
+void next_pattern() {
+  current_pattern_idx = (current_pattern_idx + 1) % ARRAY_SIZE(patterns);
+}
 
 void poll_button() {
   // debounce tomfoolery
@@ -233,274 +232,274 @@ void poll_button() {
   }
 }
 
-  void patt_startup() {
-    if (sweep_state != STOP) {
-      switch (sweep_state) {
-      case UP:
-        if (sweep_idx + 1 < LED_COUNT) {
-          fadeToBlackBy(strip, LED_COUNT, SWEEP_FADE_BY);
-          strip[sweep_idx++] = CRGB::White;
-        } else {
-          sweep_idx--;
-          sweep_state = DOWN;
-        }
-        break;
-      case DOWN:
+void patt_startup() {
+  if (sweep_state != STOP) {
+    switch (sweep_state) {
+    case UP:
+      if (sweep_idx + 1 < LED_COUNT) {
         fadeToBlackBy(strip, LED_COUNT, SWEEP_FADE_BY);
-        if (sweep_idx - 1 > 0) {
-          strip[sweep_idx--] = CRGB::White;
-        } else if (sweep_idx == 0) {
-          sweep_state = STOP;
-        } else {
-          sweep_idx = 0;
-          strip[sweep_idx] = CRGB::White;
-        }
-        break;
-      default:
-        break;
+        strip[sweep_idx++] = CRGB::White;
+      } else {
+        sweep_idx--;
+        sweep_state = DOWN;
       }
-    } else {
-      switch (current_pattern_idx) {
-      case PATT_IDX_RAINBOW:
-        if (startup_rainbow_brightness < 255) {
-          fl::fill_rainbow_circular(strip, LED_COUNT, rainbow_hue, false);
-          FastLED.setBrightness(++startup_rainbow_brightness);
-        } else {
-          startup_idx = LED_COUNT;
-          do_startup = false;
-        }
-        break;
-      case (PATT_IDX_RAINBOW_DUAL):
-        if (startup_rainbow_brightness < 255) {
-          fl::fill_rainbow_circular(strip(0, LED_COUNT / 2), LED_COUNT / 2,
-                                    rainbow_hue, true);
-          fl::fill_rainbow_circular(strip(LED_COUNT / 2 + 1, LED_COUNT),
-                                    LED_COUNT / 2, rainbow_hue, false);
-          FastLED.setBrightness(++startup_rainbow_brightness);
-        } else {
-          startup_idx = LED_COUNT;
-          do_startup = false;
-        }
-        break;
-      default:
-        fadeToBlackBy(strip, LED_COUNT, 255);
+      break;
+    case DOWN:
+      fadeToBlackBy(strip, LED_COUNT, SWEEP_FADE_BY);
+      if (sweep_idx - 1 > 0) {
+        strip[sweep_idx--] = CRGB::White;
+      } else if (sweep_idx == 0) {
+        sweep_state = STOP;
+      } else {
+        sweep_idx = 0;
+        strip[sweep_idx] = CRGB::White;
+      }
+      break;
+    default:
+      break;
+    }
+  } else {
+    switch (current_pattern_idx) {
+    case PATT_IDX_RAINBOW:
+      if (startup_rainbow_brightness < 255) {
+        fl::fill_rainbow_circular(strip, LED_COUNT, rainbow_hue, false);
+        FastLED.setBrightness(++startup_rainbow_brightness);
+      } else {
+        startup_idx = LED_COUNT;
         do_startup = false;
-        break;
       }
-    }
-  }
-
-  void patt_solid() {
-    fill_solid(strip, startup_idx, CHSV(PRIMARY_HUE, 255, 255));
-  }
-
-  void patt_solid_glitter() {
-    fill_solid(strip, startup_idx, CHSV(PRIMARY_HUE, 255, 255));
-    if (random8() < 80) {
-      uint8_t rand_led = random16(LED_COUNT);
-      if (rand_led < startup_idx)
-        strip[rand_led] += CRGB::White;
-    }
-  }
-
-  void patt_scroll() {
-    for (int i = 0; i < LED_COUNT; i++) {
-      if (i < startup_idx) {
-        strip[i] = hsv2rgb_spectrum(CHSV(
-            PRIMARY_SPEC_HUE, 255,
-            map(quadwave8(5 * i + wave_offset), 0, 255, WAVE_MIN, WAVE_MAX)));
+      break;
+    case (PATT_IDX_RAINBOW_DUAL):
+      if (startup_rainbow_brightness < 255) {
+        fl::fill_rainbow_circular(strip(0, LED_COUNT / 2), LED_COUNT / 2,
+                                  rainbow_hue, true);
+        fl::fill_rainbow_circular(strip(LED_COUNT / 2 + 1, LED_COUNT),
+                                  LED_COUNT / 2, rainbow_hue, false);
+        FastLED.setBrightness(++startup_rainbow_brightness);
+      } else {
+        startup_idx = LED_COUNT;
+        do_startup = false;
       }
+      break;
+    default:
+      fadeToBlackBy(strip, LED_COUNT, 255);
+      do_startup = false;
+      break;
     }
-    EVERY_N_MILLIS(SCROLL_UPDATE_TIME) wave_offset--;
   }
+}
 
-  void patt_knightrider() {
-    fadeToBlackBy(strip, LED_COUNT, 255);
-    if (startup_idx < KNIGHTRIDER_WIDTH) {
-      fl::fill_solid(strip(0, startup_idx), startup_idx, PRIMARY_HSV);
+void patt_solid() {
+  fill_solid(strip, startup_idx, CHSV(PRIMARY_HUE, 255, 255));
+}
+
+void patt_solid_glitter() {
+  fill_solid(strip, startup_idx, CHSV(PRIMARY_HUE, 255, 255));
+  if (random8() < 80) {
+    uint8_t rand_led = random16(LED_COUNT);
+    if (rand_led < startup_idx)
+      strip[rand_led] += CRGB::White;
+  }
+}
+
+void patt_scroll() {
+  for (int i = 0; i < LED_COUNT; i++) {
+    if (i < startup_idx) {
+      strip[i] = hsv2rgb_spectrum(CHSV(
+          PRIMARY_SPEC_HUE, 255,
+          map(quadwave8(5 * i + wave_offset), 0, 255, WAVE_MIN, WAVE_MAX)));
+    }
+  }
+  EVERY_N_MILLIS(SCROLL_UPDATE_TIME) wave_offset--;
+}
+
+void patt_knightrider() {
+  fadeToBlackBy(strip, LED_COUNT, 255);
+  if (startup_idx < KNIGHTRIDER_WIDTH) {
+    fl::fill_solid(strip(0, startup_idx), startup_idx, PRIMARY_HSV);
+  } else {
+    fl::fill_solid(
+        strip(knightrider_idx, knightrider_idx + KNIGHTRIDER_WIDTH + 1),
+        KNIGHTRIDER_WIDTH, PRIMARY_HSV);
+  }
+  EVERY_N_MILLIS(KNIGHTRIDER_UPDATE_TIME) {
+    if (knightrider_rev) {
+      if (knightrider_idx - 1 > 0) {
+        knightrider_idx--;
+      } else if (knightrider_idx == 0) {
+        knightrider_rev = false;
+      } else {
+        knightrider_idx = 0;
+      }
     } else {
-      fl::fill_solid(
-          strip(knightrider_idx, knightrider_idx + KNIGHTRIDER_WIDTH + 1),
-          KNIGHTRIDER_WIDTH, PRIMARY_HSV);
-    }
-    EVERY_N_MILLIS(KNIGHTRIDER_UPDATE_TIME) {
-      if (knightrider_rev) {
-        if (knightrider_idx - 1 > 0) {
-          knightrider_idx--;
-        } else if (knightrider_idx == 0) {
-          knightrider_rev = false;
-        } else {
-          knightrider_idx = 0;
-        }
+      if (knightrider_idx + 1 + KNIGHTRIDER_WIDTH < LED_COUNT) {
+        knightrider_idx++;
+      } else if (knightrider_idx == LED_COUNT - KNIGHTRIDER_WIDTH) {
+        knightrider_rev = true;
       } else {
-        if (knightrider_idx + 1 + KNIGHTRIDER_WIDTH < LED_COUNT) {
-          knightrider_idx++;
-        } else if (knightrider_idx == LED_COUNT - KNIGHTRIDER_WIDTH) {
-          knightrider_rev = true;
-        } else {
-          knightrider_idx = LED_COUNT - KNIGHTRIDER_WIDTH;
-        }
+        knightrider_idx = LED_COUNT - KNIGHTRIDER_WIDTH;
       }
     }
   }
+}
 
-  void patt_beatsin8_one() {
-    fadeToBlackBy(strip, LED_COUNT, 1);
-    uint8_t beatsin_idx = beatsin8(13, 0, LED_COUNT, 0, BEATSIN_PHASE);
-    if (beatsin_idx < startup_idx)
-      strip[beatsin_idx] = PRIMARY_HSV;
-  }
+void patt_beatsin8_one() {
+  fadeToBlackBy(strip, LED_COUNT, 1);
+  uint8_t beatsin_idx = beatsin8(13, 0, LED_COUNT, 0, BEATSIN_PHASE);
+  if (beatsin_idx < startup_idx)
+    strip[beatsin_idx] = PRIMARY_HSV;
+}
 
-  void patt_beatsin8_four() {
-    fadeToBlackBy(strip, LED_COUNT, 1);
-    uint8_t beatsin_idx_1 =
-        beatsin8(13, 0, LED_COUNT, 0, BEATSIN_PHASE + BEATSIN_INCREMENT * 0);
-    uint8_t beatsin_idx_2 =
-        beatsin8(13, 0, LED_COUNT, 0, BEATSIN_PHASE + BEATSIN_INCREMENT * 1);
-    uint8_t beatsin_idx_3 =
-        beatsin8(13, 0, LED_COUNT, 0, BEATSIN_PHASE + BEATSIN_INCREMENT * 2);
-    uint8_t beatsin_idx_4 =
-        beatsin8(13, 0, LED_COUNT, 0, BEATSIN_PHASE + BEATSIN_INCREMENT * 3);
+void patt_beatsin8_four() {
+  fadeToBlackBy(strip, LED_COUNT, 1);
+  uint8_t beatsin_idx_1 =
+      beatsin8(13, 0, LED_COUNT, 0, BEATSIN_PHASE + BEATSIN_INCREMENT * 0);
+  uint8_t beatsin_idx_2 =
+      beatsin8(13, 0, LED_COUNT, 0, BEATSIN_PHASE + BEATSIN_INCREMENT * 1);
+  uint8_t beatsin_idx_3 =
+      beatsin8(13, 0, LED_COUNT, 0, BEATSIN_PHASE + BEATSIN_INCREMENT * 2);
+  uint8_t beatsin_idx_4 =
+      beatsin8(13, 0, LED_COUNT, 0, BEATSIN_PHASE + BEATSIN_INCREMENT * 3);
 
-    if (beatsin_idx_1 < startup_idx)
-      strip[beatsin_idx_1] = PRIMARY_HSV;
-    if (beatsin_idx_2 < startup_idx)
-      strip[beatsin_idx_2] = PRIMARY_HSV;
-    if (beatsin_idx_3 < startup_idx)
-      strip[beatsin_idx_3] = PRIMARY_HSV;
-    if (beatsin_idx_4 < startup_idx)
-      strip[beatsin_idx_4] = PRIMARY_HSV;
-  }
+  if (beatsin_idx_1 < startup_idx)
+    strip[beatsin_idx_1] = PRIMARY_HSV;
+  if (beatsin_idx_2 < startup_idx)
+    strip[beatsin_idx_2] = PRIMARY_HSV;
+  if (beatsin_idx_3 < startup_idx)
+    strip[beatsin_idx_3] = PRIMARY_HSV;
+  if (beatsin_idx_4 < startup_idx)
+    strip[beatsin_idx_4] = PRIMARY_HSV;
+}
 
-  void patt_fade() {
-    fill_solid(strip, startup_idx,
-               hsv2rgb_spectrum(
-                   CHSV(PRIMARY_SPEC_HUE, 255, ease8InOutQuad(fade_progress))));
-    EVERY_N_MILLIS(FADE_UPDATE_TIME) {
-      if (!fade_rev) {
-        if (fade_progress - 1 > 0) {
-          fade_progress--;
-        } else if (fade_progress == 0) {
-          fade_rev = true;
-        } else {
-          fade_progress = 0;
-        }
+void patt_fade() {
+  fill_solid(strip, startup_idx,
+             hsv2rgb_spectrum(
+                 CHSV(PRIMARY_SPEC_HUE, 255, ease8InOutQuad(fade_progress))));
+  EVERY_N_MILLIS(FADE_UPDATE_TIME) {
+    if (!fade_rev) {
+      if (fade_progress - 1 > 0) {
+        fade_progress--;
+      } else if (fade_progress == 0) {
+        fade_rev = true;
       } else {
-        if (fade_progress + 1 < 255) {
-          fade_progress++;
-        } else if (fade_progress == 255) {
-          fade_rev = false;
-        } else {
-          fade_progress = 255;
-        }
+        fade_progress = 0;
+      }
+    } else {
+      if (fade_progress + 1 < 255) {
+        fade_progress++;
+      } else if (fade_progress == 255) {
+        fade_rev = false;
+      } else {
+        fade_progress = 255;
       }
     }
   }
+}
 
-  // based on neopixel sound reactive pendant and
-  // https://github.com/atuline/FastLED-SoundReactive
-  void patt_sound() {
-    uint8_t i;
-    uint16_t minLvl, maxLvl;
-    int measured, height;
+// based on neopixel sound reactive pendant and
+// https://github.com/atuline/FastLED-SoundReactive
+void patt_sound() {
+  uint8_t i;
+  uint16_t minLvl, maxLvl;
+  int measured, height;
 
-    measured = analogRead(MIC_PIN);                    // Raw reading from mic
-    measured = abs(measured - 2048 - SOUND_DC_OFFSET); // Center on zero
+  measured = analogRead(MIC_PIN);                    // Raw reading from mic
+  measured = abs(measured - 2048 - SOUND_DC_OFFSET); // Center on zero
 
-    measured = (measured <= SOUND_NOISE)
-                   ? 0
-                   : (measured - SOUND_NOISE); // Remove noise/hum
-    sound_lvl = ((sound_lvl * 7) + measured) >>
-                3; // "Dampened" reading (else looks twitchy)
+  measured = (measured <= SOUND_NOISE)
+                 ? 0
+                 : (measured - SOUND_NOISE); // Remove noise/hum
+  sound_lvl = ((sound_lvl * 7) + measured) >>
+              3; // "Dampened" reading (else looks twitchy)
 
-    // Calculate bar height based on dynamic min/max levels (fixed point):
-    height = SOUND_TOP * (sound_lvl - sound_min_lvl_avg) /
-             (long)(sound_max_lvl_avg - sound_min_lvl_avg);
+  // Calculate bar height based on dynamic min/max levels (fixed point):
+  height = SOUND_TOP * (sound_lvl - sound_min_lvl_avg) /
+           (long)(sound_max_lvl_avg - sound_min_lvl_avg);
 
-    if (height < 0L)
-      height = 0; // Clip output
-    else if (height > SOUND_TOP)
-      height = SOUND_TOP;
-    if (height > sound_peak) {
-      sound_peak = height; // Keep 'sound_peak' dot at top
-      peak_millis = millis();
-    }
-
-    // Color pixels based on rainbow gradient
-    for (i = 0; i < LED_COUNT; i++) {
-      if (i < height)
-        strip[i] = PRIMARY_HSV;
-    }
-
-    fadeToBlackBy(strip, LED_COUNT, 10);
-    // only fade measurement to black but not peak (WIP, not working)
-    //    if ((sound_peak - 1) - 0 >= 1) {
-    //        fadeToBlackBy(strip(0,sound_peak - 1),sound_peak - 1,10);
-    //        if (sound_peak + 1 <= LED_COUNT - 1) {
-    //            fadeToBlackBy(strip(sound_peak + 1, LED_COUNT - 1),(LED_COUNT)
-    //            - (sound_peak + 1),255);
-    //        }
-    //    }
-    //    fadeToBlackBy(strip(0,sound_peak-2),sound_peak - 2,10);
-
-    // Draw sound_peak dot
-    if (sound_peak <= LED_COUNT - 1)
-      strip[sound_peak] = CRGB::White;
-
-    // after no peak for a while, Every few frames, make the sound_peak pixel
-    // drop by 1:
-    if (millis() - peak_millis > SOUND_PEAK_TIMEOUT) {
-      if (++sound_dot_count >= SOUND_PEAK_FALL) {
-        // fall rate
-        if (sound_peak > 0)
-          sound_peak--;
-        sound_dot_count = 0;
-      }
-    }
-
-    sound_vol[sound_vol_count] = measured; // Save sample for dynamic leveling
-    if (++sound_vol_count >= SOUND_SAMPLES)
-      sound_vol_count = 0; // Advance/rollover sample counter
-
-    // Get volume range of prior frames
-    minLvl = maxLvl = sound_vol[0];
-    for (i = 1; i < SOUND_SAMPLES; i++) {
-      if (sound_vol[i] < minLvl)
-        minLvl = sound_vol[i];
-      else if (sound_vol[i] > maxLvl)
-        maxLvl = sound_vol[i];
-    }
-    // minLvl and maxLvl indicate the volume range over prior frames, used
-    // for vertically scaling the output graph (so it looks interesting
-    // regardless of volume level).  If they're too close together though
-    // (e.g. at very low volume levels) the graph becomes super coarse
-    // and 'jumpy'...so keep some minimum distance between them (this
-    // also lets the graph go to zero when no sound is playing):
-    if ((maxLvl - minLvl) < SOUND_TOP)
-      maxLvl = minLvl + SOUND_TOP;
-    sound_min_lvl_avg =
-        (sound_min_lvl_avg * 63 + minLvl) >> 6; // Dampen min/max levels
-    sound_max_lvl_avg =
-        (sound_max_lvl_avg * 63 + maxLvl) >> 6; // (fake rolling average)
+  if (height < 0L)
+    height = 0; // Clip output
+  else if (height > SOUND_TOP)
+    height = SOUND_TOP;
+  if (height > sound_peak) {
+    sound_peak = height; // Keep 'sound_peak' dot at top
+    peak_millis = millis();
   }
 
-  void patt_rainbow() {
-    EVERY_N_MILLIS(RAINBOW_UPDATE_TIME) rainbow_hue--;
-    fl::fill_rainbow_circular(strip, LED_COUNT, rainbow_hue, false);
+  // Color pixels based on rainbow gradient
+  for (i = 0; i < LED_COUNT; i++) {
+    if (i < height)
+      strip[i] = PRIMARY_HSV;
   }
 
-  void patt_rainbow_dual() {
-    EVERY_N_MILLIS(RAINBOW_DUAL_UPDATE_TIME) rainbow_hue--;
-    fl::fill_rainbow_circular(strip(0, LED_COUNT / 2), LED_COUNT / 2,
-                              rainbow_hue, true);
-    fl::fill_rainbow_circular(strip(LED_COUNT / 2 + 1, LED_COUNT),
-                              LED_COUNT / 2, rainbow_hue, false);
+  fadeToBlackBy(strip, LED_COUNT, 10);
+  // only fade measurement to black but not peak (WIP, not working)
+  //    if ((sound_peak - 1) - 0 >= 1) {
+  //        fadeToBlackBy(strip(0,sound_peak - 1),sound_peak - 1,10);
+  //        if (sound_peak + 1 <= LED_COUNT - 1) {
+  //            fadeToBlackBy(strip(sound_peak + 1, LED_COUNT - 1),(LED_COUNT)
+  //            - (sound_peak + 1),255);
+  //        }
+  //    }
+  //    fadeToBlackBy(strip(0,sound_peak-2),sound_peak - 2,10);
+
+  // Draw sound_peak dot
+  if (sound_peak <= LED_COUNT - 1)
+    strip[sound_peak] = CRGB::White;
+
+  // after no peak for a while, Every few frames, make the sound_peak pixel
+  // drop by 1:
+  if (millis() - peak_millis > SOUND_PEAK_TIMEOUT) {
+    if (++sound_dot_count >= SOUND_PEAK_FALL) {
+      // fall rate
+      if (sound_peak > 0)
+        sound_peak--;
+      sound_dot_count = 0;
+    }
   }
 
-  // from fastled demo
-  void patt_confetti() {
-    confetti_hue++;
-    fadeToBlackBy(strip, LED_COUNT, 5);
-    int pos = random16(LED_COUNT);
-    strip[pos] += CHSV(confetti_hue + random8(64), 200, 255);
+  sound_vol[sound_vol_count] = measured; // Save sample for dynamic leveling
+  if (++sound_vol_count >= SOUND_SAMPLES)
+    sound_vol_count = 0; // Advance/rollover sample counter
+
+  // Get volume range of prior frames
+  minLvl = maxLvl = sound_vol[0];
+  for (i = 1; i < SOUND_SAMPLES; i++) {
+    if (sound_vol[i] < minLvl)
+      minLvl = sound_vol[i];
+    else if (sound_vol[i] > maxLvl)
+      maxLvl = sound_vol[i];
   }
+  // minLvl and maxLvl indicate the volume range over prior frames, used
+  // for vertically scaling the output graph (so it looks interesting
+  // regardless of volume level).  If they're too close together though
+  // (e.g. at very low volume levels) the graph becomes super coarse
+  // and 'jumpy'...so keep some minimum distance between them (this
+  // also lets the graph go to zero when no sound is playing):
+  if ((maxLvl - minLvl) < SOUND_TOP)
+    maxLvl = minLvl + SOUND_TOP;
+  sound_min_lvl_avg =
+      (sound_min_lvl_avg * 63 + minLvl) >> 6; // Dampen min/max levels
+  sound_max_lvl_avg =
+      (sound_max_lvl_avg * 63 + maxLvl) >> 6; // (fake rolling average)
+}
+
+void patt_rainbow() {
+  EVERY_N_MILLIS(RAINBOW_UPDATE_TIME) rainbow_hue--;
+  fl::fill_rainbow_circular(strip, LED_COUNT, rainbow_hue, false);
+}
+
+void patt_rainbow_dual() {
+  EVERY_N_MILLIS(RAINBOW_DUAL_UPDATE_TIME) rainbow_hue--;
+  fl::fill_rainbow_circular(strip(0, LED_COUNT / 2), LED_COUNT / 2, rainbow_hue,
+                            true);
+  fl::fill_rainbow_circular(strip(LED_COUNT / 2 + 1, LED_COUNT), LED_COUNT / 2,
+                            rainbow_hue, false);
+}
+
+// from fastled demo
+void patt_confetti() {
+  confetti_hue++;
+  fadeToBlackBy(strip, LED_COUNT, 5);
+  int pos = random16(LED_COUNT);
+  strip[pos] += CHSV(confetti_hue + random8(64), 200, 255);
+}
