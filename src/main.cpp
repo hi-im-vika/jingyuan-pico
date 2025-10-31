@@ -91,7 +91,11 @@ int global_brightness = 255;
 
 // debounce
 bool pressed = false;
-bool acted = false;
+bool acted_patt = false;
+bool acted_brightup = false;
+bool acted_brightdn = false;
+bool acted_pattnext = false;
+bool acted_pattprev = false;
 
 uint8_t startup_rainbow_brightness = 0;
 CRGBArray<LED_COUNT> strip;
