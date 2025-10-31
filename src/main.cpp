@@ -233,6 +233,16 @@ void poll_button() {
       } else if (digitalRead(BRIGHTDN_PIN) == HIGH && acted_brightdn) {
         pressed = false;
         acted_brightdn = false;
+      } else if (digitalRead(BRIGHTUP_PIN) == LOW && !acted_brightup) {
+        if (global_brightness + BRIGHT_STEP <= 255) {
+          global_brightness += BRIGHT_STEP;
+        } else {
+          global_brightness = 255;
+        }
+        acted_brightup = true;
+      } else if (digitalRead(BRIGHTUP_PIN) == HIGH && acted_brightup) {
+        pressed = false;
+        acted_brightup = false;
       }
     }
   }
